@@ -21,12 +21,16 @@ export function buildPrompt(
 
   const parts: string[] = [source.promptHints, template.promptModifiers];
 
-  if (brand.category) {
-    parts.push(`visual context and setting fitting a ${brand.category} brand`);
+  const category = brand.subCategory || brand.industry;
+  if (category) {
+    parts.push(`visual context and setting fitting a ${category} brand`);
   }
 
-  if (brand.targetAudience) {
-    parts.push(`imagery that emotionally resonates with ${brand.targetAudience}`);
+  const audience = Array.isArray(brand.targetAudience)
+    ? brand.targetAudience.join(", ")
+    : brand.targetAudience;
+  if (audience) {
+    parts.push(`imagery that emotionally resonates with ${audience}`);
   }
 
   parts.push(
