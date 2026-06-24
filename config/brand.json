@@ -1,13 +1,17 @@
 {
   "name": "SocietyBee",
   "logoPath": "public/brand/societybee-logo.png",
+  "category": "Housing Society Management App",
+  "businessDescription": "SocietyBee helps housing societies manage maintenance, visitors, complaints and community events through a single smart platform",
+  "targetAudience": "RWA committees, apartment residents and society managers in urban India",
+  "visualStyle": "luxury-dark",
   "colors": {
     "primary": "#F5B301",
     "secondary": "#1A1A2E",
     "accent": "#FFFFFF"
   },
   "contact": {
-    "phone": "+91-98765-43210",
+    "phone": "+91-93260-12544",
     "website": "societybee.in",
     "handle": "@societybee"
   },

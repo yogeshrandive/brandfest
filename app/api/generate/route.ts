@@ -4,7 +4,7 @@ import path from "path";
 import { generateBackground } from "@/lib/imageAdapter";
 import { buildPrompt } from "@/lib/prompt";
 import { renderPoster } from "@/lib/render";
-import type { BrandConfig, Occasion, OfferInput, PosterSize, PosterRequest } from "@/lib/types";
+import type { BrandConfig, Occasion, OfferInput, PosterSize, PosterRequest, VisualStyle } from "@/lib/types";
 import { SIZE_CONFIGS } from "@/lib/types";
 
 export const runtime = "nodejs";
@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
   }
 
-  const { mode, occasion, offer, sizes } = body;
+  const { mode, occasion, offer, sizes, visualStyle } = body;
 
   if (!sizes || sizes.length === 0) {
     return NextResponse.json({ error: "At least one size must be selected" }, { status: 400 });
@@ -40,6 +40,7 @@ export async function POST(req: NextRequest) {
   }
 
   const brand = loadBrand();
+  if (visualStyle) brand.visualStyle = visualStyle as VisualStyle;
   const today = new Date().toISOString().slice(0, 10).replace(/-/g, "");
 
   try {
