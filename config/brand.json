@@ -1,10 +1,10 @@
 {
   "name": "SocietyBee",
   "logoPath": "public/brand/societybee-logo.png",
-  "category": "Billing, Accounting & Bye-Law Compliance Software for Co-operative Housing Societies",
-  "businessDescription": "SocietyBee is billing, accounting and bye-law compliance software for Indian co-operative housing societies, built for the CAs and treasurers who run the books, not for gate passes and visitor logs. Multi-society from one login, zero payment-gateway commission, and an AI assistant (BeeAgent) that reads your ledger and bye-laws.",
-  "targetAudience": "CAs, chartered accountants, treasurers and managing committee members of Indian co-operative housing societies",
-  "visualStyle": "luxury-dark",
+  "industry": "Software",
+  "subCategory": "Billing, Accounting & Bye-Law Compliance for Co-operative Housing Societies",
+  "tagline": "Let the Bee Manage, You Relax",
+  "website": "societybee.in",
   "colors": {
     "primary": "#F5B301",
     "secondary": "#1A1A2E",
@@ -12,9 +12,34 @@
   },
   "contact": {
     "phone": "+91-93260-12544",
+    "email": "",
     "website": "societybee.in",
-    "handle": "@societybee"
+    "handle": "@societybee",
+    "address": ""
   },
-  "tagline": "Smart living for modern societies",
-  "footerNote": "Powered by SocietyBee"
+  "businessDescription": "SocietyBee is billing, accounting and bye-law compliance software for Indian co-operative housing societies, built for the CAs and treasurers who run the books, not for gate passes and visitor logs. Multi-society from one login, zero payment-gateway commission, and an AI assistant (BeeAgent) that reads your ledger and bye-laws.",
+  "brandStyle": "Premium",
+  "brandVoice": "Professional",
+  "targetAudience": [
+    "CAs and chartered accountants managing housing society accounts",
+    "Treasurers and managing committee members of co-operative housing societies",
+    "Property managers and RWA administrators in urban India"
+  ],
+  "creativeVisualStyle": "Photorealistic",
+  "layoutStyle": "Centered",
+  "logoPlacement": "Top Left",
+  "footerNote": "Powered by SocietyBee",
+  "visualStyle": "luxury-dark",
+  "brandSummary": "",
+  "visualDirection": "",
+  "industryVisualKeywords": [
+    "apartment buildings",
+    "housing society",
+    "committee members",
+    "ledger and accounts",
+    "digital dashboard",
+    "urban India",
+    "professional office setting",
+    "modern residential complex"
+  ]
 }

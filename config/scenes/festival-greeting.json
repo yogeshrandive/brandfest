@@ -1,0 +1,51 @@
+{
+  "id": "festival-greeting",
+  "name": "Festival Greeting",
+  "icon": "🎉",
+  "category": "festival",
+  "description": "Warm festive wishes for occasions, holidays and national days",
+  "inputs": [
+    {
+      "key": "festival",
+      "label": "Festival / Occasion",
+      "type": "text",
+      "required": true,
+      "placeholder": "e.g. Diwali, New Year, Holi",
+      "suggestions": [
+        "Diwali", "New Year", "Holi", "Eid", "Christmas", "Navratri",
+        "Ganesh Chaturthi", "Independence Day", "Republic Day", "Dussehra",
+        "Women's Day", "Valentine's Day", "Pongal", "Bhai Dooj"
+      ]
+    },
+    {
+      "key": "greetingMessage",
+      "label": "Greeting Message",
+      "type": "textarea",
+      "required": true,
+      "placeholder": "e.g. May this festival bring joy, prosperity and togetherness",
+      "suggestions": [
+        "May this festival bring joy, prosperity and togetherness to your home",
+        "Wishing you and your family a blessed and joyful celebration",
+        "May the light of this occasion guide your path to success",
+        "Celebrating the spirit of togetherness and community"
+      ],
+      "randomizable": true
+    },
+    {
+      "key": "fromName",
+      "label": "From (Sender Name)",
+      "type": "text",
+      "required": false,
+      "placeholder": "Defaults to your business name"
+    },
+    {
+      "key": "mood",
+      "label": "Mood",
+      "type": "select",
+      "required": false,
+      "options": ["Joyful", "Spiritual", "Grand", "Warm", "Festive", "Patriotic"],
+      "default": "Festive",
+      "randomizable": true
+    }
+  ]
+}

@@ -1,0 +1,67 @@
+{
+  "id": "offer-campaign",
+  "name": "Offer Campaign",
+  "icon": "🏷️",
+  "category": "offer",
+  "description": "Promotional creatives for discounts, launches and limited-time deals",
+  "inputs": [
+    {
+      "key": "offerTitle",
+      "label": "Offer Headline",
+      "type": "text",
+      "required": true,
+      "placeholder": "e.g. 20% OFF, Free Setup, Launch Price",
+      "suggestions": ["20% OFF", "Free 3-Month Trial", "Launch Price", "Early Bird Offer", "Zero Commission"]
+    },
+    {
+      "key": "offerDescription",
+      "label": "Offer Description",
+      "type": "text",
+      "required": true,
+      "placeholder": "e.g. Annual Subscription, All Features Included",
+      "suggestions": [
+        "Annual Subscription",
+        "All Features Included",
+        "No Hidden Charges",
+        "Lifetime Access"
+      ]
+    },
+    {
+      "key": "cta",
+      "label": "Call to Action",
+      "type": "text",
+      "required": true,
+      "placeholder": "e.g. Book Demo, Claim Now, Get Started",
+      "suggestions": ["Book Demo", "Claim Now", "Get Started", "Register Free", "Talk to Us"]
+    },
+    {
+      "key": "campaignName",
+      "label": "Campaign Name (optional)",
+      "type": "text",
+      "required": false,
+      "placeholder": "e.g. Diwali Offer, Year-End Sale"
+    },
+    {
+      "key": "urgency",
+      "label": "Urgency",
+      "type": "select",
+      "required": false,
+      "options": ["None", "Limited Time", "Limited Seats", "Expiry Date"],
+      "default": "Limited Time"
+    },
+    {
+      "key": "expiryDate",
+      "label": "Valid Until",
+      "type": "date",
+      "required": false,
+      "placeholder": "Offer expiry date"
+    },
+    {
+      "key": "subtext",
+      "label": "Additional Subtext",
+      "type": "text",
+      "required": false,
+      "placeholder": "e.g. T&C apply. For new sign-ups only."
+    }
+  ]
+}
