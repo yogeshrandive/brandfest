@@ -13,7 +13,13 @@ export function buildPrompt(
   height: number
 ): string {
   const isStory = height > width;
-  const aspectNote = isStory ? "vertical portrait 9:16 composition" : "square 1:1 composition";
+  const aspectNote = isStory
+    ? "vertical portrait 9:16 composition"
+    : "square 1:1 composition";
+
   const colorNote = `color palette inspired by ${brand.colors.primary} gold and ${brand.colors.secondary} dark tones`;
-  return [source.promptHints, colorNote, aspectNote, STYLE_SUFFIX].filter(Boolean).join(", ");
+
+  return [source.promptHints, colorNote, aspectNote, STYLE_SUFFIX]
+    .filter(Boolean)
+    .join(", ");
 }
