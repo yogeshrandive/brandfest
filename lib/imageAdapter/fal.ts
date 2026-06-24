@@ -12,23 +12,34 @@ export async function generateWithFal(
 
   falClient.config({ credentials: apiKey });
 
-  const model =
-    options.model ?? process.env.IMAGE_MODEL ?? "fal-ai/flux-pro/v1.1";
+  const hasReference = !!options.referenceImageUrl;
 
-  const aspectRatio =
-    options.height > options.width ? "9:16" : "1:1";
+  // flux-pro/v1.1-ultra supports image_url reference; v1.1 is text-only
+  const model =
+    options.model ??
+    process.env.IMAGE_MODEL ??
+    (hasReference ? "fal-ai/flux-pro/v1.1-ultra" : "fal-ai/flux-pro/v1.1");
+
+  const aspectRatio = options.height > options.width ? "9:16" : "1:1";
+
+  const input: Record<string, unknown> = {
+    prompt: options.prompt,
+    image_size: { width: options.width, height: options.height },
+    aspect_ratio: aspectRatio,
+    num_inference_steps: 28,
+    guidance_scale: 3.5,
+    num_images: 1,
+    safety_tolerance: "2",
+    output_format: "png",
+  };
+
+  if (hasReference) {
+    input.image_url = options.referenceImageUrl;
+    input.image_prompt_strength = options.referenceStrength ?? 0.15;
+  }
 
   const result = await falClient.subscribe(model, {
-    input: {
-      prompt: options.prompt,
-      image_size: { width: options.width, height: options.height },
-      aspect_ratio: aspectRatio,
-      num_inference_steps: 28,
-      guidance_scale: 3.5,
-      num_images: 1,
-      safety_tolerance: "2",
-      output_format: "png",
-    },
+    input,
     pollInterval: 2000,
     logs: false,
   }) as { images?: Array<{ url: string }> };

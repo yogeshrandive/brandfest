@@ -11,20 +11,46 @@ import { SIZE_CONFIGS } from "@/lib/types";
 export const runtime = "nodejs";
 export const maxDuration = 120;
 
+const BRAND_PATH = path.join(process.cwd(), "config", "brand.json");
+const ASSETS_DIR = path.join(process.cwd(), "public", "brand");
+
 function loadBrand(): BrandConfig {
-  const p = path.join(process.cwd(), "config", "brand.json");
-  return JSON.parse(fs.readFileSync(p, "utf-8"));
+  return JSON.parse(fs.readFileSync(BRAND_PATH, "utf-8"));
+}
+
+function fileToDataUrl(filePath: string): string | null {
+  const abs = path.isAbsolute(filePath)
+    ? filePath
+    : path.join(process.cwd(), filePath);
+  if (!fs.existsSync(abs)) return null;
+  const buf = fs.readFileSync(abs);
+  const ext = path.extname(abs).slice(1).toLowerCase();
+  const mime = ext === "jpg" || ext === "jpeg" ? "image/jpeg" : "image/png";
+  return `data:${mime};base64,${buf.toString("base64")}`;
+}
+
+// Pick the best reference image: explicit reference > logo
+function resolveReferenceImage(
+  brand: BrandConfig,
+  referenceImagePath?: string
+): string | null {
+  if (referenceImagePath) {
+    const url = fileToDataUrl(path.join(ASSETS_DIR, referenceImagePath));
+    if (url) return url;
+  }
+  // Fall back to logo
+  return fileToDataUrl(brand.logoPath);
 }
 
 export async function POST(req: NextRequest) {
-  let body: GenerateSceneRequest;
+  let body: GenerateSceneRequest & { referenceImage?: string; referenceStrength?: number };
   try {
     body = await req.json();
   } catch {
     return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
   }
 
-  const { sceneId, inputs, sizes, visualStyle } = body;
+  const { sceneId, inputs, sizes, visualStyle, referenceImage, referenceStrength } = body;
 
   if (!sceneId) {
     return NextResponse.json({ error: "sceneId is required" }, { status: 400 });
@@ -38,7 +64,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: `Unknown scene: ${sceneId}` }, { status: 400 });
   }
 
-  // Validate required inputs
   const missing = scene.inputs
     .filter((i) => i.required && !inputs[i.key])
     .map((i) => i.label);
@@ -54,7 +79,7 @@ export async function POST(req: NextRequest) {
   const today = new Date().toISOString().slice(0, 10).replace(/-/g, "");
   const hasLLM = !!process.env.OPENROUTER_API_KEY;
 
-  // Build overlay content from scene inputs
+  const referenceImageUrl = resolveReferenceImage(brand, referenceImage) ?? undefined;
   const overlayContent = buildOverlayContent(sceneId, inputs, brand);
 
   try {
@@ -62,7 +87,6 @@ export async function POST(req: NextRequest) {
       sizes.map(async (size: PosterSize) => {
         const { width, height } = SIZE_CONFIGS[size];
 
-        // Generate image prompt via LLM (or fallback)
         let imagePrompt: string;
         if (hasLLM) {
           imagePrompt = await buildScenePrompt({ scene, inputs, brand, size, visualStyle });
@@ -70,9 +94,15 @@ export async function POST(req: NextRequest) {
           imagePrompt = buildFallbackPrompt(inputs, brand, size, visualStyle);
         }
 
-        const { imageBuffer } = await generateBackground({ prompt: imagePrompt, width, height });
-        const pngBuffer = await renderPoster(imageBuffer, overlayContent, brand, size);
+        const { imageBuffer } = await generateBackground({
+          prompt: imagePrompt,
+          width,
+          height,
+          referenceImageUrl,
+          referenceStrength: referenceStrength ?? 0.15,
+        });
 
+        const pngBuffer = await renderPoster(imageBuffer, overlayContent, brand, size);
         const filename = `${brand.name.toLowerCase().replace(/\s+/g, "-")}-${sceneId}-${size}-${today}.png`;
         const dataUrl = `data:image/png;base64,${pngBuffer.toString("base64")}`;
 
@@ -105,7 +135,9 @@ function buildOverlayContent(
   if (sceneId === "offer-campaign") {
     let validity: string | undefined;
     if (inputs.expiryDate) {
-      validity = `Valid until ${new Date(inputs.expiryDate).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })}`;
+      validity = `Valid until ${new Date(inputs.expiryDate).toLocaleDateString("en-IN", {
+        day: "numeric", month: "long", year: "numeric",
+      })}`;
     } else if (inputs.urgency && inputs.urgency !== "None") {
       validity = inputs.urgency === "Limited Time" ? "Limited Time Offer" : inputs.urgency;
     }

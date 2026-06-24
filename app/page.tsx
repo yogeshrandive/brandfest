@@ -9,6 +9,12 @@ import type {
   SceneDefinition,
   SceneInputValues,
 } from "@/lib/types";
+
+interface BrandAsset {
+  filename: string;
+  url: string;
+  isLogo: boolean;
+}
 import { VISUAL_TEMPLATES, VISUAL_STYLE_ORDER } from "@/lib/templates";
 
 const SIZE_LABELS: Record<PosterSize, string> = {
@@ -18,7 +24,7 @@ const SIZE_LABELS: Record<PosterSize, string> = {
 
 type ActiveTab = "create" | "brand";
 
-// ─── Color picker ─────────────────────────────────────────────────────────────────────────────────
+// ─── Color picker ─────────────────────────────────────────────────────────────
 
 function ColorField({
   label,
@@ -52,7 +58,7 @@ function ColorField({
   );
 }
 
-// ─── Style chips ───────────────────────────────────────────────────────────────────────────────
+// ─── Style chips ──────────────────────────────────────────────────────────────
 
 function StylePicker({
   value,
@@ -85,7 +91,7 @@ function StylePicker({
   );
 }
 
-// ─── Scene input renderer ─────────────────────────────────────────────────────────────────────
+// ─── Scene input renderer ─────────────────────────────────────────────────────
 
 function SceneInputField({
   def,
@@ -174,7 +180,7 @@ function SceneInputField({
   );
 }
 
-// ─── Main ────────────────────────────────────────────────────────────────────────────────────
+// ─── Main ─────────────────────────────────────────────────────────────────────
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState<ActiveTab>("create");
@@ -189,6 +195,11 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null);
   const [posters, setPosters] = useState<GeneratedPoster[]>([]);
   const [lastPrompt, setLastPrompt] = useState<string | null>(null);
+
+  // ── Reference image state ──
+  const [assets, setAssets] = useState<BrandAsset[]>([]);
+  const [selectedReference, setSelectedReference] = useState<string | null>(null); // filename
+  const [referenceStrength, setReferenceStrength] = useState(0.15);
 
   // ── Brand state ──
   const [brandForm, setBrandForm] = useState<BrandConfig | null>(null);
@@ -218,6 +229,16 @@ export default function Home() {
       })
       .catch(() => {})
       .finally(() => setBrandLoading(false));
+
+    fetch("/api/brand/assets")
+      .then((r) => r.json())
+      .then(({ assets: list }: { assets: BrandAsset[] }) => {
+        setAssets(list);
+        // Auto-select the logo as default reference
+        const logo = list.find((a) => a.isLogo);
+        if (logo) setSelectedReference(logo.filename);
+      })
+      .catch(() => {});
   }, []);
 
   // Reset inputs when scene changes
@@ -260,7 +281,14 @@ export default function Home() {
       const res = await fetch("/api/generate-scene", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ sceneId: selectedSceneId, inputs: sceneInputs, sizes, visualStyle }),
+        body: JSON.stringify({
+          sceneId: selectedSceneId,
+          inputs: sceneInputs,
+          sizes,
+          visualStyle,
+          referenceImage: selectedReference ?? undefined,
+          referenceStrength,
+        }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Generation failed");
@@ -349,7 +377,7 @@ export default function Home() {
     URL.revokeObjectURL(url);
   }
 
-  // ─────────────────────────────────────────────────────────────────────────────────
+  // ─────────────────────────────────────────────────────────────────────────────
 
   return (
     <main className="min-h-screen bg-[#1A1A2E] text-white">
@@ -381,7 +409,7 @@ export default function Home() {
         </div>
       </header>
 
-      {/* ── Create Tab ───────────────────────────────────────────────────────────── */}
+      {/* ── Create Tab ───────────────────────────────────────────────────────── */}
       {activeTab === "create" && (
         <div className="max-w-5xl mx-auto px-4 py-8 grid md:grid-cols-[400px_1fr] gap-8">
           {/* Left controls */}
@@ -429,6 +457,73 @@ export default function Home() {
                     }
                   />
                 ))}
+              </div>
+            )}
+
+            {/* Reference image */}
+            {assets.length > 0 && (
+              <div>
+                <label className="text-xs uppercase tracking-widest text-white/40 mb-2 block">
+                  Brand Reference Image
+                </label>
+                <div className="grid grid-cols-3 gap-2 mb-3">
+                  {assets.map((asset) => (
+                    <button
+                      key={asset.filename}
+                      onClick={() =>
+                        setSelectedReference(
+                          selectedReference === asset.filename ? null : asset.filename
+                        )
+                      }
+                      className={`relative rounded-lg overflow-hidden border-2 transition-all aspect-square ${
+                        selectedReference === asset.filename
+                          ? "border-[#F5B301]"
+                          : "border-white/10 hover:border-white/30"
+                      }`}
+                    >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={asset.url}
+                        alt={asset.filename}
+                        className="w-full h-full object-contain bg-white/5 p-1"
+                      />
+                      {asset.isLogo && (
+                        <span className="absolute bottom-0 left-0 right-0 text-center text-[10px] bg-[#F5B301]/80 text-[#1A1A2E] font-bold py-0.5">
+                          Logo
+                        </span>
+                      )}
+                      {selectedReference === asset.filename && (
+                        <div className="absolute top-1 right-1 w-4 h-4 bg-[#F5B301] rounded-full flex items-center justify-center text-[#1A1A2E] text-[10px] font-bold">
+                          ✓
+                        </div>
+                      )}
+                    </button>
+                  ))}
+                </div>
+                {selectedReference && (
+                  <div>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="text-xs text-white/40">Reference Strength</label>
+                      <span className="text-xs text-[#F5B301] font-mono">{referenceStrength.toFixed(2)}</span>
+                    </div>
+                    <input
+                      type="range"
+                      min="0.05"
+                      max="0.40"
+                      step="0.05"
+                      value={referenceStrength}
+                      onChange={(e) => setReferenceStrength(parseFloat(e.target.value))}
+                      className="w-full accent-[#F5B301]"
+                    />
+                    <div className="flex justify-between text-[10px] text-white/20 mt-0.5">
+                      <span>Subtle</span>
+                      <span>Strong</span>
+                    </div>
+                  </div>
+                )}
+                {!selectedReference && (
+                  <p className="text-xs text-white/30">No reference selected — AI generates freely</p>
+                )}
               </div>
             )}
 
@@ -549,7 +644,7 @@ export default function Home() {
         </div>
       )}
 
-      {/* ── Brand Settings Tab ────────────────────────────────────────────────────── */}
+      {/* ── Brand Settings Tab ────────────────────────────────────────────────── */}
       {activeTab === "brand" && (
         <div className="max-w-2xl mx-auto px-4 py-8 space-y-8">
           {brandLoading ? (
@@ -714,6 +809,42 @@ export default function Home() {
                   Default Visual Style
                 </h2>
                 <StylePicker value={brandForm.visualStyle ?? "luxury-dark"} onChange={(s) => updateBrandField("visualStyle", s)} />
+              </section>
+
+              {/* Brand Assets */}
+              <section className="space-y-4">
+                <h2 className="text-xs uppercase tracking-widest text-white/40 border-b border-white/10 pb-2">
+                  Brand Assets
+                </h2>
+                <p className="text-xs text-white/40">
+                  Place images in <code className="font-mono bg-white/10 px-1 rounded">public/brand/</code> folder.
+                  Files with &quot;logo&quot; in the name are auto-detected as the logo.
+                </p>
+                {assets.length > 0 ? (
+                  <div className="grid grid-cols-3 gap-3">
+                    {assets.map((asset) => (
+                      <div key={asset.filename} className="space-y-1">
+                        <div className="rounded-xl overflow-hidden border border-white/10 bg-white/5 aspect-square flex items-center justify-center p-2">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={asset.url}
+                            alt={asset.filename}
+                            className="max-w-full max-h-full object-contain"
+                          />
+                        </div>
+                        <p className="text-[10px] text-white/40 truncate text-center">{asset.filename}</p>
+                        {asset.isLogo && (
+                          <p className="text-[10px] text-[#F5B301] text-center font-semibold">Logo</p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="p-6 border border-dashed border-white/10 rounded-xl text-center">
+                    <p className="text-white/30 text-sm">No images found in public/brand/</p>
+                    <p className="text-white/20 text-xs mt-1">Upload PNG/JPG files to that folder and redeploy</p>
+                  </div>
+                )}
               </section>
 
               {/* AI Enrichment */}
