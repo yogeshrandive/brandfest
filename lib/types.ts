@@ -1,6 +1,17 @@
+export type VisualStyle =
+  | "luxury-dark"
+  | "vibrant-festive"
+  | "warm-earthy"
+  | "clean-modern"
+  | "bold-graphic";
+
 export interface BrandConfig {
   name: string;
   logoPath: string;
+  category: string;
+  businessDescription: string;
+  targetAudience: string;
+  visualStyle: VisualStyle;
   colors: {
     primary: string;
     secondary: string;
@@ -40,6 +51,7 @@ export interface PosterRequest {
   occasion?: Occasion;
   offer?: OfferInput;
   sizes: PosterSize[];
+  visualStyle?: VisualStyle;
 }
 
 export type PosterSize = "square" | "story";
