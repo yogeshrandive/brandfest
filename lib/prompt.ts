@@ -1,10 +1,11 @@
 import type { BrandConfig, Occasion, OfferInput } from "./types";
+import { VISUAL_TEMPLATES } from "./templates";
 
 const STYLE_SUFFIX =
-  "photorealistic digital art, highly detailed, professional quality, " +
-  "clean composition with large empty lower third area reserved for text overlay, " +
+  "photorealistic digital art, highly detailed, 8K resolution, professional quality, " +
+  "large empty lower-third area reserved for text overlay — keep it visually clear and dark, " +
   "no text, no letters, no words, no numbers, no captions, no watermarks, no logos, " +
-  "full bleed background illustration, vibrant colors, sharp focus";
+  "full bleed background illustration, sharp focus, award-winning commercial photography";
 
 export function buildPrompt(
   source: Occasion | OfferInput,
@@ -12,14 +13,27 @@ export function buildPrompt(
   width: number,
   height: number
 ): string {
+  const template = VISUAL_TEMPLATES[brand.visualStyle ?? "luxury-dark"];
   const isStory = height > width;
   const aspectNote = isStory
-    ? "vertical portrait 9:16 composition"
-    : "square 1:1 composition";
+    ? "vertical portrait 9:16 tall-format composition, upper area detailed, lower area in deep shadow"
+    : "square 1:1 format composition, lower third in deep shadow";
 
-  const colorNote = `color palette inspired by ${brand.colors.primary} gold and ${brand.colors.secondary} dark tones`;
+  const parts: string[] = [source.promptHints, template.promptModifiers];
 
-  return [source.promptHints, colorNote, aspectNote, STYLE_SUFFIX]
-    .filter(Boolean)
-    .join(", ");
+  if (brand.category) {
+    parts.push(`visual context and setting fitting a ${brand.category} brand`);
+  }
+
+  if (brand.targetAudience) {
+    parts.push(`imagery that emotionally resonates with ${brand.targetAudience}`);
+  }
+
+  parts.push(
+    `colour palette anchored by ${brand.colors.primary} gold and ${brand.colors.secondary} deep tones`,
+    aspectNote,
+    STYLE_SUFFIX
+  );
+
+  return parts.filter(Boolean).join(", ");
 }
