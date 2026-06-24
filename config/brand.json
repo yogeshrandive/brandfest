@@ -1,9 +1,9 @@
 {
   "name": "SocietyBee",
   "logoPath": "public/brand/societybee-logo.png",
-  "category": "Housing Society Management App",
-  "businessDescription": "SocietyBee helps housing societies manage maintenance, visitors, complaints and community events through a single smart platform",
-  "targetAudience": "RWA committees, apartment residents and society managers in urban India",
+  "category": "Billing, Accounting & Bye-Law Compliance Software for Co-operative Housing Societies",
+  "businessDescription": "SocietyBee is billing, accounting and bye-law compliance software for Indian co-operative housing societies, built for the CAs and treasurers who run the books, not for gate passes and visitor logs. Multi-society from one login, zero payment-gateway commission, and an AI assistant (BeeAgent) that reads your ledger and bye-laws.",
+  "targetAudience": "CAs, chartered accountants, treasurers and managing committee members of Indian co-operative housing societies",
   "visualStyle": "luxury-dark",
   "colors": {
     "primary": "#F5B301",
