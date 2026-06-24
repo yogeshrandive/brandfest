@@ -2,15 +2,22 @@
   "name": "SocietyBee",
   "logoPath": "public/brand/societybee-logo.png",
   "colors": {
-    "primary": "#F5B301",
+    "primary": "#F9CA24",
     "secondary": "#1A1A2E",
     "accent": "#FFFFFF"
   },
   "contact": {
-    "phone": "+91-98765-43210",
+    "phone": "+91-93260-12544",
+    "email": "admin@societybee.in",
     "website": "societybee.in",
     "handle": "@societybee"
   },
-  "tagline": "Smart living for modern societies",
-  "footerNote": "Powered by SocietyBee"
+  "social": {
+    "linkedin": "https://www.linkedin.com/company/societybee",
+    "facebook": "https://www.facebook.com/societybee",
+    "instagram": "https://www.instagram.com/societybee",
+    "youtube": "https://www.youtube.com/@societybee"
+  },
+  "tagline": "Let the bee manage. You relax.",
+  "footerNote": "Built in Mumbai by Simplifyne Technologies Private Limited"
 }
