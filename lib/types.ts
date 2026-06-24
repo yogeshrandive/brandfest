@@ -1,8 +1,16 @@
 export interface BrandConfig {
   name: string;
   logoPath: string;
-  colors: { primary: string; secondary: string; accent: string };
-  contact: { phone: string; website: string; handle: string };
+  colors: {
+    primary: string;
+    secondary: string;
+    accent: string;
+  };
+  contact: {
+    phone: string;
+    website: string;
+    handle: string;
+  };
   tagline: string;
   footerNote: string;
 }

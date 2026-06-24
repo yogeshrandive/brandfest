@@ -9,10 +9,14 @@ export async function generateWithFal(
 
   const apiKey = process.env.FAL_KEY;
   if (!apiKey) throw new Error("FAL_KEY env var is not set");
+
   falClient.config({ credentials: apiKey });
 
-  const model = options.model ?? process.env.IMAGE_MODEL ?? "fal-ai/flux-pro/v1.1";
-  const aspectRatio = options.height > options.width ? "9:16" : "1:1";
+  const model =
+    options.model ?? process.env.IMAGE_MODEL ?? "fal-ai/flux-pro/v1.1";
+
+  const aspectRatio =
+    options.height > options.width ? "9:16" : "1:1";
 
   const result = await falClient.subscribe(model, {
     input: {
@@ -31,7 +35,10 @@ export async function generateWithFal(
 
   const imageUrl = result?.images?.[0]?.url;
   if (!imageUrl) throw new Error("Fal.ai returned no image URL");
+
   const res = await fetch(imageUrl);
   if (!res.ok) throw new Error(`Failed to fetch generated image: ${res.status}`);
-  return { imageBuffer: Buffer.from(await res.arrayBuffer()) };
+
+  const arrayBuffer = await res.arrayBuffer();
+  return { imageBuffer: Buffer.from(arrayBuffer) };
 }

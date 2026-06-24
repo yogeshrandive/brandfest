@@ -9,6 +9,7 @@ export interface SafeZones {
 
 export function getSafeZones(size: PosterSize, w: number, h: number): SafeZones {
   if (size === "square") {
+    // 1080x1080
     return {
       logo: { top: 40, right: 40, width: 220, height: 55 },
       headline: { top: Math.round(h * 0.52), left: 60, right: 60, maxHeight: Math.round(h * 0.28) },
@@ -16,6 +17,8 @@ export function getSafeZones(size: PosterSize, w: number, h: number): SafeZones 
       scrim: { top: Math.round(h * 0.48), bottom: 0 },
     };
   }
+
+  // 1080x1920 story/status — headline lower quarter
   return {
     logo: { top: 60, right: 50, width: 240, height: 60 },
     headline: { top: Math.round(h * 0.62), left: 70, right: 70, maxHeight: Math.round(h * 0.22) },
