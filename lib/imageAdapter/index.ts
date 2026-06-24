@@ -3,6 +3,8 @@ export interface GenerateBackgroundOptions {
   width: number;
   height: number;
   model?: string;
+  referenceImageUrl?: string;   // base64 data URL or https URL
+  referenceStrength?: number;   // 0.0–1.0, default 0.15
 }
 
 export interface GenerateBackgroundResult {
