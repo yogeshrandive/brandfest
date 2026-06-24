@@ -5,13 +5,38 @@ export type VisualStyle =
   | "clean-modern"
   | "bold-graphic";
 
+export type BrandStyle =
+  | "Premium"
+  | "Corporate"
+  | "Modern"
+  | "Minimal"
+  | "Luxury"
+  | "Friendly"
+  | "Traditional"
+  | "Bold";
+
+export type BrandVoice =
+  | "Professional"
+  | "Friendly"
+  | "Inspirational"
+  | "Luxury"
+  | "Youthful";
+
+export type CreativeVisualStyle =
+  | "Photorealistic"
+  | "Illustration"
+  | "3D"
+  | "Flat Design"
+  | "Modern Graphic";
+
 export interface BrandConfig {
+  // Basic (required)
   name: string;
   logoPath: string;
-  category: string;
-  businessDescription: string;
-  targetAudience: string;
-  visualStyle: VisualStyle;
+  industry: string;
+  subCategory: string;
+  tagline: string;
+  website: string;
   colors: {
     primary: string;
     secondary: string;
@@ -19,11 +44,29 @@ export interface BrandConfig {
   };
   contact: {
     phone: string;
+    email: string;
     website: string;
     handle: string;
+    address?: string;
   };
-  tagline: string;
-  footerNote: string;
+
+  // Advanced (optional, defaults provided)
+  businessDescription?: string;
+  brandStyle?: BrandStyle;
+  brandVoice?: BrandVoice;
+  targetAudience?: string[];
+  creativeVisualStyle?: CreativeVisualStyle;
+  layoutStyle?: string;
+  logoPlacement?: string;
+  footerNote?: string;
+
+  // Legacy visual style (kept for image template selection)
+  visualStyle: VisualStyle;
+
+  // AI-enriched (auto-generated, cached)
+  brandSummary?: string;
+  visualDirection?: string;
+  industryVisualKeywords?: string[];
 }
 
 export interface Occasion {
@@ -42,6 +85,41 @@ export interface OfferInput {
   validity?: string;
   promptHints: string;
   theme: "promo";
+}
+
+// Scene system
+export type SceneCategory = "festival" | "offer" | "event";
+
+export type SceneInputType = "text" | "select" | "textarea" | "date";
+
+export interface SceneInputDef {
+  key: string;
+  label: string;
+  type: SceneInputType;
+  required: boolean;
+  placeholder?: string;
+  suggestions?: string[];
+  options?: string[];       // for select type
+  randomizable?: boolean;
+  default?: string;
+}
+
+export interface SceneDefinition {
+  id: string;
+  name: string;
+  icon: string;
+  category: SceneCategory;
+  description: string;
+  inputs: SceneInputDef[];
+}
+
+export type SceneInputValues = Record<string, string>;
+
+export interface GenerateSceneRequest {
+  sceneId: string;
+  inputs: SceneInputValues;
+  sizes: PosterSize[];
+  visualStyle?: VisualStyle;
 }
 
 export type PosterMode = "occasion" | "offer";
@@ -75,4 +153,10 @@ export interface GeneratedPoster {
 
 export interface GenerateResponse {
   posters: GeneratedPoster[];
+}
+
+export interface LLMConfig {
+  provider: "openrouter";
+  model: string;
+  apiKey: string;
 }
