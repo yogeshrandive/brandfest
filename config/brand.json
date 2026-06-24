@@ -1,0 +1,16 @@
+{
+  "name": "SocietyBee",
+  "logoPath": "public/brand/societybee-logo.png",
+  "colors": {
+    "primary": "#F5B301",
+    "secondary": "#1A1A2E",
+    "accent": "#FFFFFF"
+  },
+  "contact": {
+    "phone": "+91-98765-43210",
+    "website": "societybee.in",
+    "handle": "@societybee"
+  },
+  "tagline": "Smart living for modern societies",
+  "footerNote": "Powered by SocietyBee"
+}
