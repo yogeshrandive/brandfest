@@ -218,8 +218,9 @@ export default function Home() {
     fetch("/api/scenes")
       .then((r) => r.json())
       .then((data: SceneDefinition[]) => {
-        setScenes(data);
-        if (data.length > 0) setSelectedSceneId(data[0].id);
+        const list = Array.isArray(data) ? data : [];
+        setScenes(list);
+        if (list.length > 0) setSelectedSceneId(list[0].id);
       })
       .catch(() => {});
 
@@ -234,7 +235,8 @@ export default function Home() {
 
     fetch("/api/brand/assets")
       .then((r) => r.json())
-      .then(({ assets: list }: { assets: BrandAsset[] }) => {
+      .then((data: { assets?: BrandAsset[] }) => {
+        const list = Array.isArray(data?.assets) ? data.assets : [];
         setAssets(list);
         // Auto-select the logo as default reference
         const logo = list.find((a) => a.isLogo);
