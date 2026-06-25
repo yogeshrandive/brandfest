@@ -123,6 +123,13 @@ export interface CreativeBrief {
   visualHierarchy: string[];
 }
 
+export type CreativeStyle =
+  | "realistic"
+  | "graphical"
+  | "abstract-3d"
+  | "festival-decor"
+  | "architectural";
+
 // Creative Recipe — structured data used to assemble the FAL prompt
 export interface CreativeRecipe {
   campaign: string;           // what this image communicates emotionally
