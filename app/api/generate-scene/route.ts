@@ -4,10 +4,10 @@ import path from "path";
 import { loadScene } from "@/lib/scenes";
 import { callCreativeDirector, buildFallbackBrief } from "@/lib/creativeDirector";
 import { buildPromptFromBrief } from "@/lib/promptBuilder";
-import { generateBackground } from "@/lib/imageAdapter";
-import { renderPoster } from "@/lib/render";
+// import { generateBackground } from "@/lib/imageAdapter";
+// import { renderPoster } from "@/lib/render";
 import type { BrandConfig, GenerateSceneRequest, PosterSize, VisualStyle } from "@/lib/types";
-import { SIZE_CONFIGS } from "@/lib/types";
+// import { SIZE_CONFIGS } from "@/lib/types";
 
 export const runtime = "nodejs";
 export const maxDuration = 120;
@@ -75,11 +75,10 @@ export async function POST(req: NextRequest) {
 
   const brand = loadBrand();
   if (visualStyle) brand.visualStyle = visualStyle as VisualStyle;
-  const today = new Date().toISOString().slice(0, 10).replace(/-/g, "");
   const hasLLM = !!process.env.OPENROUTER_API_KEY;
 
-  const referenceImageUrl = resolveReferenceImage(brand, referenceImage) ?? undefined;
-  const overlayContent = buildOverlayContent(sceneId, inputs, brand);
+  // referenceImage / referenceStrength kept in body for future use when image gen is re-enabled
+  void resolveReferenceImage; void referenceImage; void referenceStrength;
 
   // Stage 1: Creative Director → CreativeBrief (one LLM call, shared across all sizes)
   const brief = hasLLM
@@ -93,41 +92,13 @@ export async function POST(req: NextRequest) {
       })()
     : buildFallbackBrief({ scene, inputs, brand, size: sizes[0] });
 
-  try {
-    const posters = await Promise.all(
-      sizes.map(async (size: PosterSize) => {
-        const { width, height } = SIZE_CONFIGS[size];
+  // Stage 2: Prompt Builder → FAL prompt per size (image generation skipped for now)
+  const prompts = sizes.map((size: PosterSize) => ({
+    size,
+    prompt: buildPromptFromBrief(brief, brand, size, (visualStyle as VisualStyle) ?? brand.visualStyle),
+  }));
 
-        // Stage 2: Prompt Builder → FAL prompt (deterministic, per size)
-        const imagePrompt = buildPromptFromBrief(
-          brief,
-          brand,
-          size,
-          (visualStyle as VisualStyle) ?? brand.visualStyle
-        );
-
-        const { imageBuffer } = await generateBackground({
-          prompt: imagePrompt,
-          width,
-          height,
-          referenceImageUrl,
-          referenceStrength: referenceStrength ?? 0.15,
-        });
-
-        const pngBuffer = await renderPoster(imageBuffer, overlayContent, brand, size);
-        const filename = `${brand.name.toLowerCase().replace(/\s+/g, "-")}-${sceneId}-${size}-${today}.png`;
-        const dataUrl = `data:image/png;base64,${pngBuffer.toString("base64")}`;
-
-        return { size, dataUrl, filename, brief, prompt: imagePrompt };
-      })
-    );
-
-    return NextResponse.json({ posters });
-  } catch (err) {
-    console.error("[generate-scene] Error:", err);
-    const message = err instanceof Error ? err.message : "Generation failed";
-    return NextResponse.json({ error: message }, { status: 500 });
-  }
+  return NextResponse.json({ brief, prompts });
 }
 
 function buildOverlayContent(
@@ -168,3 +139,6 @@ function buildOverlayContent(
     validity: undefined,
   };
 }
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const _buildOverlayContent = buildOverlayContent;
