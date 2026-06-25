@@ -195,7 +195,7 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [posters, setPosters] = useState<GeneratedPoster[]>([]);
-  const [lastPrompt, setLastPrompt] = useState<string | null>(null);
+  const [prompts, setPrompts] = useState<{ size: PosterSize; prompt: string }[]>([]);
   const [lastBrief, setLastBrief] = useState<CreativeBrief | null>(null);
 
   // ── Reference image state ──
@@ -218,8 +218,9 @@ export default function Home() {
     fetch("/api/scenes")
       .then((r) => r.json())
       .then((data: SceneDefinition[]) => {
-        setScenes(data);
-        if (data.length > 0) setSelectedSceneId(data[0].id);
+        const list = Array.isArray(data) ? data : [];
+        setScenes(list);
+        if (list.length > 0) setSelectedSceneId(list[0].id);
       })
       .catch(() => {});
 
@@ -234,7 +235,8 @@ export default function Home() {
 
     fetch("/api/brand/assets")
       .then((r) => r.json())
-      .then(({ assets: list }: { assets: BrandAsset[] }) => {
+      .then((data: { assets?: BrandAsset[] }) => {
+        const list = Array.isArray(data?.assets) ? data.assets : [];
         setAssets(list);
         // Auto-select the logo as default reference
         const logo = list.find((a) => a.isLogo);
@@ -252,7 +254,7 @@ export default function Home() {
     });
     setSceneInputs(defaults);
     setPosters([]);
-    setLastPrompt(null);
+    setPrompts([]);
     setLastBrief(null);
     setError(null);
   }, [selectedSceneId]);
@@ -278,7 +280,7 @@ export default function Home() {
     setLoading(true);
     setError(null);
     setPosters([]);
-    setLastPrompt(null);
+    setPrompts([]);
     setLastBrief(null);
 
     try {
@@ -296,9 +298,9 @@ export default function Home() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Generation failed");
-      setPosters(data.posters);
-      if (data.posters[0]?.prompt) setLastPrompt(data.posters[0].prompt);
-      if (data.posters[0]?.brief) setLastBrief(data.posters[0].brief);
+      if (data.brief) setLastBrief(data.brief);
+      if (data.prompts) setPrompts(data.prompts);
+      if (data.posters) setPosters(data.posters);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Generation failed");
     } finally {
@@ -593,20 +595,20 @@ export default function Home() {
               </div>
             )}
 
-            {!loading && posters.length === 0 && !error && (
+            {!loading && posters.length === 0 && prompts.length === 0 && !error && (
               <div className="flex flex-col items-center justify-center h-80 gap-3 border border-dashed border-white/10 rounded-2xl">
                 <div className="text-4xl opacity-30">🖼</div>
-                <p className="text-white/30 text-sm">Your creative will appear here</p>
+                <p className="text-white/30 text-sm">Your creative brief will appear here</p>
               </div>
             )}
 
-            {posters.length > 0 && (
+            {(lastBrief || prompts.length > 0 || posters.length > 0) && (
               <div className="space-y-6">
                 {/* Creative Brief card */}
                 {lastBrief && (
                   <div className="p-4 bg-white/3 border border-white/10 rounded-xl space-y-3">
                     <p className="text-xs uppercase tracking-widest text-white/30">Creative Brief</p>
-                    <div className="grid grid-cols-2 gap-2 text-xs">
+                    <div className="grid grid-cols-2 gap-x-4 gap-y-3 text-xs">
                       {[
                         { label: "Goal", value: lastBrief.goal },
                         { label: "Mood", value: lastBrief.mood },
@@ -630,48 +632,63 @@ export default function Home() {
                         ))}
                       </div>
                     )}
-                    {lastPrompt && (
-                      <details className="mt-1">
-                        <summary className="text-[10px] text-white/20 cursor-pointer hover:text-white/40">View full FAL prompt</summary>
-                        <p className="text-[10px] text-white/30 leading-relaxed mt-2 whitespace-pre-wrap">{lastPrompt}</p>
-                      </details>
-                    )}
                   </div>
                 )}
 
-                <h2 className="font-semibold text-white/70 text-sm uppercase tracking-wide">
-                  Preview &amp; Download
-                </h2>
-                <div className="grid gap-6">
-                  {posters.map((poster) => (
-                    <div
-                      key={poster.size}
-                      className="bg-white/5 border border-white/10 rounded-2xl overflow-hidden"
-                    >
-                      <div className="px-4 py-3 flex items-center justify-between border-b border-white/10">
-                        <span className="text-sm font-medium text-white/70">
-                          {SIZE_LABELS[poster.size]}
-                        </span>
-                        <button
-                          onClick={() => downloadPoster(poster)}
-                          className="flex items-center gap-2 px-4 py-1.5 bg-[#F5B301] text-[#1A1A2E] text-xs font-bold rounded-lg hover:bg-[#F5B301]/90 transition-colors"
-                        >
-                          ↓ Download PNG
-                        </button>
+                {/* Per-size prompts */}
+                {prompts.length > 0 && (
+                  <div className="space-y-3">
+                    <h2 className="font-semibold text-white/70 text-sm uppercase tracking-wide">
+                      FAL Image Prompts
+                    </h2>
+                    {prompts.map(({ size, prompt }) => (
+                      <div key={size} className="bg-white/3 border border-white/10 rounded-xl overflow-hidden">
+                        <div className="px-4 py-2 border-b border-white/10 flex items-center justify-between">
+                          <span className="text-xs font-semibold text-[#F5B301]">{SIZE_LABELS[size]}</span>
+                          <button
+                            onClick={() => navigator.clipboard.writeText(prompt)}
+                            className="text-[10px] text-white/30 hover:text-white/60 transition-colors"
+                          >
+                            Copy
+                          </button>
+                        </div>
+                        <pre className="p-4 text-[11px] text-white/50 leading-relaxed whitespace-pre-wrap font-mono overflow-x-auto">
+                          {prompt}
+                        </pre>
                       </div>
-                      <div className="p-4 flex justify-center">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img
-                          src={poster.dataUrl}
-                          alt={poster.filename}
-                          className={`rounded-lg shadow-2xl max-w-full ${
-                            poster.size === "story" ? "max-h-[500px] w-auto" : "max-w-[400px]"
-                          }`}
-                        />
+                    ))}
+                  </div>
+                )}
+
+                {/* Poster previews (when image gen is re-enabled) */}
+                {posters.length > 0 && (
+                  <div className="space-y-4">
+                    <h2 className="font-semibold text-white/70 text-sm uppercase tracking-wide">
+                      Preview &amp; Download
+                    </h2>
+                    {posters.map((poster) => (
+                      <div key={poster.size} className="bg-white/5 border border-white/10 rounded-2xl overflow-hidden">
+                        <div className="px-4 py-3 flex items-center justify-between border-b border-white/10">
+                          <span className="text-sm font-medium text-white/70">{SIZE_LABELS[poster.size]}</span>
+                          <button
+                            onClick={() => downloadPoster(poster)}
+                            className="flex items-center gap-2 px-4 py-1.5 bg-[#F5B301] text-[#1A1A2E] text-xs font-bold rounded-lg hover:bg-[#F5B301]/90 transition-colors"
+                          >
+                            ↓ Download PNG
+                          </button>
+                        </div>
+                        <div className="p-4 flex justify-center">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={poster.dataUrl}
+                            alt={poster.filename}
+                            className={`rounded-lg shadow-2xl max-w-full ${poster.size === "story" ? "max-h-[500px] w-auto" : "max-w-[400px]"}`}
+                          />
+                        </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
           </section>
