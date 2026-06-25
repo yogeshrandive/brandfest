@@ -316,6 +316,7 @@ export default function Home() {
                   inputs: sceneInputs,
                   brief,
                   visualStyle,
+                  selectedLogo: selectedReference ?? undefined,
                 }),
               });
               const imgData = await imgRes.json();

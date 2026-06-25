@@ -109,10 +109,8 @@ Color Directive: ${brief.colorDirective}
 Visual Keywords: ${brief.visualKeywords.join(", ")}`;
 }
 
-function NegativeSection(brief: CreativeBrief, embedText: boolean): string {
-  const defaults = embedText
-    ? ["UI overlays", "speech bubbles", "random unrelated text"]
-    : ["text", "letters", "words", "watermarks", "logos", "UI overlays", "speech bubbles"];
+function NegativeSection(brief: CreativeBrief): string {
+  const defaults = ["text", "letters", "words", "watermarks", "logos", "UI overlays", "speech bubbles"];
   const combined = [...new Set([...defaults, ...brief.negativeElements])];
 
   return `NEGATIVE
@@ -131,27 +129,6 @@ export interface TextOverlayContent {
   fromName?: string;
 }
 
-function TextAndLogoSection(content: TextOverlayContent, brand: BrandConfig): string {
-  const lines: string[] = [];
-
-  lines.push(`RESERVED ZONES — keep these areas visually clean, dark, and uncluttered`);
-  lines.push(`Top-left corner (15% width × 10% height): reserved for logo — no subjects, no bright elements, smooth dark background.`);
-  lines.push(`Bottom strip (full width × 10% height): reserved for contact footer — keep dark, flat, no important scene content.`);
-
-  lines.push(``);
-  lines.push(`TEXT TO RENDER IN THE IMAGE`);
-  lines.push(`Use clean, legible sans-serif typography. All text must be sharp, correctly spelled, and properly aligned.`);
-  lines.push(`Place all text in the lower-center area (between 50%–88% from top), above the bottom reserved strip.`);
-  lines.push(``);
-  lines.push(`Headline (large, bold, prominent): "${content.headline}"`);
-  if (content.subtext) lines.push(`Subtext (medium weight, below headline): "${content.subtext}"`);
-  if (content.cta) lines.push(`CTA button (${brand.colors.primary} background, contrasting text): "${content.cta}"`);
-  if (content.validity) lines.push(`Validity note (small, below CTA): "${content.validity}"`);
-  if (content.fromName) lines.push(`From line (small text, near headline): "${content.fromName}"`);
-
-  return lines.join("\n");
-}
-
 function QualitySection(): string {
   return `QUALITY
 Photorealistic. Commercial advertising quality.
@@ -166,10 +143,7 @@ export function buildPromptFromBrief(
   brand: BrandConfig,
   size: PosterSize,
   visualStyle: VisualStyle,
-  textContent?: TextOverlayContent,
 ): string {
-  const embedText = !!textContent;
-
   const sections = [
     RoleSection(),
     CampaignGoalSection(brief),
@@ -178,17 +152,12 @@ export function buildPromptFromBrief(
     SubjectSection(brief),
     CompositionSection(brief, size),
     CameraSection(brief),
+    BrandPlacementSection(brief),
     LightingSection(brief),
     StyleSection(brief, visualStyle),
-    NegativeSection(brief, embedText),
+    NegativeSection(brief),
     QualitySection(),
   ];
-
-  if (embedText && textContent) {
-    sections.push(TextAndLogoSection(textContent, brand));
-  } else {
-    sections.splice(7, 0, BrandPlacementSection(brief));
-  }
 
   return sections.join("\n\n");
 }

@@ -52,8 +52,12 @@ export interface OverlayContent {
   validity?: string;
 }
 
+import type { TextOverlayContent } from "./promptBuilder";
+
 export async function renderLogoAndFooter(
   backgroundBuffer: Buffer,
+  content: TextOverlayContent,
+  logoDataUrl: string | null,
   brand: BrandConfig,
   size: PosterSize
 ): Promise<Buffer> {
@@ -64,11 +68,21 @@ export async function renderLogoAndFooter(
 
   const bgBuffer = await resizeBackground(backgroundBuffer, width, height);
   const bgBase64 = `data:image/png;base64,${bgBuffer.toString("base64")}`;
-  const logoBase64 = loadLogoBase64(brand.logoPath);
+  // Use provided logoDataUrl, fall back to brand.logoPath
+  const logoBase64 = logoDataUrl ?? loadLogoBase64(brand.logoPath);
 
   const primary = brand.colors.primary;
+  const secondary = brand.colors.secondary;
   const accent = brand.colors.accent;
+
+  const logoW = size === "square" ? 280 : 300;
+  const logoH = size === "square" ? 70 : 76;
+  const headlineSize = size === "square" ? 52 : 58;
+  const subtextSize = size === "square" ? 28 : 32;
+  const ctaSize = size === "square" ? 24 : 28;
   const contactSize = size === "square" ? 22 : 24;
+
+  const scrimTopPct = (zones.scrim.top / height) * 100;
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const element: any = {
@@ -79,16 +93,48 @@ export async function renderLogoAndFooter(
         // Background
         { type: "img", props: { src: bgBase64, style: { position: "absolute", top: 0, left: 0, width, height, objectFit: "cover" } } },
 
+        // Dark scrim over lower portion for text readability
+        {
+          type: "div",
+          props: {
+            style: {
+              position: "absolute", top: 0, left: 0, width, height,
+              background: `linear-gradient(to bottom, transparent ${scrimTopPct - 8}%, ${hexToRgba(secondary, 0.82)} ${scrimTopPct + 10}%, ${hexToRgba(secondary, 0.95)} 100%)`,
+            },
+          },
+        },
+
         // Logo — top-left
         logoBase64
-          ? { type: "img", props: { src: logoBase64, style: { position: "absolute", top: zones.logo.top, left: zones.logo.right, width: zones.logo.width, height: zones.logo.height, objectFit: "contain" } } }
-          : { type: "div", props: { style: { position: "absolute", top: zones.logo.top, left: zones.logo.right, backgroundColor: primary, borderRadius: 8, padding: "8px 16px", display: "flex", alignItems: "center" }, children: [{ type: "span", props: { style: { color: "#fff", fontWeight: 700, fontSize: 20 }, children: brand.name } }] } },
+          ? { type: "img", props: { src: logoBase64, style: { position: "absolute", top: zones.logo.top, left: 40, width: logoW, height: logoH, objectFit: "contain", objectPosition: "left center" } } }
+          : { type: "div", props: { style: { position: "absolute", top: zones.logo.top, left: 40, backgroundColor: primary, borderRadius: 8, padding: "10px 20px", display: "flex", alignItems: "center" }, children: [{ type: "span", props: { style: { color: "#fff", fontWeight: 700, fontSize: 22 }, children: brand.name } }] } },
+
+        // Text zone — headline + subtext + cta
+        {
+          type: "div",
+          props: {
+            style: { position: "absolute", top: zones.headline.top, left: zones.headline.left, right: zones.headline.right, display: "flex", flexDirection: "column", gap: 12 },
+            children: [
+              { type: "div", props: { style: { color: accent, fontSize: headlineSize, fontWeight: 700, lineHeight: 1.15, textShadow: `0 2px 8px ${hexToRgba(secondary, 0.6)}` }, children: content.headline } },
+              { type: "div", props: { style: { width: 80, height: 4, backgroundColor: primary, borderRadius: 2, marginTop: 4 } } },
+              ...(content.subtext ? [{ type: "div", props: { style: { color: hexToRgba(accent, 0.9), fontSize: subtextSize, fontWeight: 400, lineHeight: 1.4 }, children: content.subtext } }] : []),
+              ...(content.fromName ? [{ type: "div", props: { style: { color: hexToRgba(accent, 0.75), fontSize: subtextSize - 4, fontWeight: 400 }, children: `From: ${content.fromName}` } }] : []),
+              ...(content.cta ? [{
+                type: "div", props: {
+                  style: { display: "flex", marginTop: 8 },
+                  children: [{ type: "div", props: { style: { backgroundColor: primary, color: secondary, fontSize: ctaSize, fontWeight: 700, padding: "10px 28px", borderRadius: 8 }, children: content.cta } }],
+                },
+              }] : []),
+              ...(content.validity ? [{ type: "div", props: { style: { color: hexToRgba(primary, 0.85), fontSize: ctaSize - 4, marginTop: 4 }, children: content.validity } }] : []),
+            ],
+          },
+        },
 
         // Contact footer — bottom strip
         {
           type: "div",
           props: {
-            style: { position: "absolute", bottom: 0, left: 0, right: 0, height: zones.contact.height, backgroundColor: hexToRgba("#000000", 0.65), borderTop: `2px solid ${hexToRgba(primary, 0.4)}`, display: "flex", alignItems: "center", justifyContent: "center", gap: 28, paddingLeft: 40, paddingRight: 40 },
+            style: { position: "absolute", bottom: 0, left: 0, right: 0, height: zones.contact.height, backgroundColor: hexToRgba("#000000", 0.70), borderTop: `2px solid ${hexToRgba(primary, 0.4)}`, display: "flex", alignItems: "center", justifyContent: "center", gap: 28, paddingLeft: 40, paddingRight: 40 },
             children: [
               { type: "div", props: { style: { color: accent, fontSize: contactSize, fontWeight: 400 }, children: brand.contact.phone } },
               { type: "div", props: { style: { color: hexToRgba(accent, 0.45), fontSize: contactSize }, children: "•" } },

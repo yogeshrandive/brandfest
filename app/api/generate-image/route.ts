@@ -12,9 +12,29 @@ export const runtime = "nodejs";
 export const maxDuration = 300;
 
 const BRAND_PATH = path.join(process.cwd(), "config", "brand.json");
+const ASSETS_DIR = path.join(process.cwd(), "public", "brand");
 
 function loadBrand(): BrandConfig {
   return JSON.parse(fs.readFileSync(BRAND_PATH, "utf-8"));
+}
+
+function fileToDataUrl(filePath: string): string {
+  const buf = fs.readFileSync(filePath);
+  const ext = path.extname(filePath).slice(1).toLowerCase();
+  const mime = ext === "svg" ? "image/svg+xml" : `image/${ext === "jpg" ? "jpeg" : ext}`;
+  return `data:${mime};base64,${buf.toString("base64")}`;
+}
+
+function resolveLogoDataUrl(selectedFilename: string | undefined, fallbackPath: string): string | null {
+  // Use UI-selected asset first
+  if (selectedFilename) {
+    const p = path.join(ASSETS_DIR, selectedFilename);
+    if (fs.existsSync(p)) return fileToDataUrl(p);
+  }
+  // Fall back to brand.logoPath
+  const abs = path.join(process.cwd(), fallbackPath);
+  if (fs.existsSync(abs)) return fileToDataUrl(abs);
+  return null;
 }
 
 function buildTextContent(inputs: Record<string, string>, brand: BrandConfig): TextOverlayContent {
@@ -38,6 +58,7 @@ interface GenerateImageRequest {
   inputs: Record<string, string>;
   brief?: CreativeBrief;
   visualStyle?: string;
+  selectedLogo?: string; // filename from public/brand/ selected in UI
 }
 
 export async function POST(req: NextRequest) {
@@ -48,41 +69,30 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
   }
 
-  const { size, sceneId, inputs, brief, visualStyle } = body;
+  const { size, sceneId, inputs, brief, visualStyle, selectedLogo } = body;
 
-  if (!size) {
-    return NextResponse.json({ error: "size is required" }, { status: 400 });
-  }
-  if (!brief) {
-    return NextResponse.json({ error: "brief is required" }, { status: 400 });
-  }
-
-  if (!process.env.FAL_KEY) {
-    return NextResponse.json({ error: "FAL_KEY is not configured" }, { status: 503 });
-  }
+  if (!size) return NextResponse.json({ error: "size is required" }, { status: 400 });
+  if (!brief) return NextResponse.json({ error: "brief is required" }, { status: 400 });
+  if (!process.env.FAL_KEY) return NextResponse.json({ error: "FAL_KEY is not configured" }, { status: 503 });
 
   const brand = loadBrand();
   const { width, height } = SIZE_CONFIGS[size];
 
-  // Build text content from scene inputs, embed into FAL prompt
-  const textContent = buildTextContent(inputs, brand);
+  // Stage 1: Build background-only FAL prompt (no text, no logo — Satori handles those)
   const finalPrompt = buildPromptFromBrief(
     brief,
     brand,
     size,
     (visualStyle as VisualStyle) ?? brand.visualStyle,
-    textContent,
   );
 
-  // Stage 1: FAL generates background + text
-  const { imageBuffer } = await generateBackground({
-    prompt: finalPrompt,
-    width,
-    height,
-  });
+  // Stage 2: FAL generates the background scene
+  const { imageBuffer } = await generateBackground({ prompt: finalPrompt, width, height });
 
-  // Stage 2: Satori composites logo (top-left) + contact footer (bottom) over FAL output
-  const posterBuffer = await renderLogoAndFooter(imageBuffer, brand, size);
+  // Stage 3: Satori composites logo (top-left) + text + contact footer over FAL image
+  const textContent = buildTextContent(inputs, brand);
+  const logoDataUrl = resolveLogoDataUrl(selectedLogo, brand.logoPath);
+  const posterBuffer = await renderLogoAndFooter(imageBuffer, textContent, logoDataUrl, brand, size);
 
   const dataUrl = `data:image/png;base64,${posterBuffer.toString("base64")}`;
   const today = new Date().toISOString().split("T")[0];
