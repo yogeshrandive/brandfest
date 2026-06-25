@@ -3,9 +3,9 @@ import fs from "fs";
 import path from "path";
 import { generateBackground } from "@/lib/imageAdapter";
 import { renderLogoAndFooter } from "@/lib/render";
-import { buildPromptFromBrief } from "@/lib/promptBuilder";
+import { buildRecipeFromBrief, buildPromptFromRecipe } from "@/lib/promptBuilder";
 import type { TextOverlayContent } from "@/lib/promptBuilder";
-import type { BrandConfig, PosterSize, CreativeBrief, VisualStyle } from "@/lib/types";
+import type { BrandConfig, PosterSize, CreativeBrief } from "@/lib/types";
 import { SIZE_CONFIGS } from "@/lib/types";
 
 export const runtime = "nodejs";
@@ -57,8 +57,7 @@ interface GenerateImageRequest {
   sceneId: string;
   inputs: Record<string, string>;
   brief?: CreativeBrief;
-  visualStyle?: string;
-  selectedLogo?: string; // filename from public/brand/ selected in UI
+  selectedLogo?: string;
 }
 
 export async function POST(req: NextRequest) {
@@ -69,7 +68,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
   }
 
-  const { size, sceneId, inputs, brief, visualStyle, selectedLogo } = body;
+  const { size, sceneId, inputs, brief, selectedLogo } = body;
 
   if (!size) return NextResponse.json({ error: "size is required" }, { status: 400 });
   if (!brief) return NextResponse.json({ error: "brief is required" }, { status: 400 });
@@ -78,13 +77,10 @@ export async function POST(req: NextRequest) {
   const brand = loadBrand();
   const { width, height } = SIZE_CONFIGS[size];
 
-  // Stage 1: Build background-only FAL prompt (no text, no logo — Satori handles those)
-  const finalPrompt = buildPromptFromBrief(
-    brief,
-    brand,
-    size,
-    (visualStyle as VisualStyle) ?? brand.visualStyle,
-  );
+  // Stage 1: Build recipe + FAL prompt — each call gets a unique seed for variation
+  const seed = sceneId + size + Date.now().toString(36);
+  const recipe = buildRecipeFromBrief(brief, brand, sceneId, size, seed);
+  const finalPrompt = buildPromptFromRecipe(recipe, size);
 
   // Stage 2: FAL generates the background scene
   const { imageBuffer } = await generateBackground({ prompt: finalPrompt, width, height });

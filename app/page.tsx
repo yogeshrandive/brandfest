@@ -315,7 +315,6 @@ export default function Home() {
                   sceneId: selectedSceneId,
                   inputs: sceneInputs,
                   brief,
-                  visualStyle,
                   selectedLogo: selectedReference ?? undefined,
                 }),
               });

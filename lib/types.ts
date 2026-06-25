@@ -123,6 +123,23 @@ export interface CreativeBrief {
   visualHierarchy: string[];
 }
 
+// Creative Recipe — structured data used to assemble the FAL prompt
+export interface CreativeRecipe {
+  campaign: string;           // what this image communicates emotionally
+  mood: string;               // 2-3 mood words
+  environment: string;        // picked scene environment description
+  subject: string;            // who, max 1-3 people, natural action
+  businessCues: string[];     // 2-3 society-specific props/details
+  camera: string;             // picked camera style
+  lighting: string;           // picked lighting style
+  composition: string;        // picked composition rule
+  style: string;              // picked visual style
+  colorAccent: string;        // brand primary color usage note
+  negativeExtra: string[];    // scene-specific things to avoid
+  // carry-through for Satori overlay (not sent to FAL)
+  brief?: CreativeBrief;
+}
+
 // Scene system
 export type SceneCategory = "festival" | "offer" | "event" | "awareness";
 

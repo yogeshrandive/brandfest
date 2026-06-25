@@ -63,10 +63,11 @@ export async function POST(req: NextRequest) {
       })()
     : buildFallbackBrief({ scene, inputs, brand, size: sizes[0] });
 
-  // Stage 2: Prompt Builder → prompt per size
+  // Stage 2: Prompt Builder → prompt per size (each gets a unique seed for variation)
+  const baseSeed = sceneId + Date.now().toString(36);
   const prompts = sizes.map((size: PosterSize) => ({
     size,
-    prompt: buildPromptFromBrief(brief, brand, size, (visualStyle as VisualStyle) ?? brand.visualStyle),
+    prompt: buildPromptFromBrief(brief, brand, size, (visualStyle as VisualStyle) ?? brand.visualStyle, sceneId, baseSeed + size),
   }));
 
   return NextResponse.json({ brief, prompts });
