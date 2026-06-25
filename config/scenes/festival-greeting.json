@@ -4,6 +4,8 @@
   "icon": "🎉",
   "category": "festival",
   "description": "Warm festive wishes for occasions, holidays and national days",
+  "visualTheme": "festive-community",
+  "briefInstructions": "Focus on emotional warmth and community celebration. NO product UI, NO dashboards, NO screens. People should be celebrating together — families, neighbours, society members. The scene must feel joyful and human, not commercial. The brand is a quiet, warm presence — not the hero of the image. Reserve space for the greeting text overlay at the bottom.",
   "inputs": [
     {
       "key": "festival",

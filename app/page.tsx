@@ -8,6 +8,7 @@ import type {
   VisualStyle,
   SceneDefinition,
   SceneInputValues,
+  CreativeBrief,
 } from "@/lib/types";
 
 interface BrandAsset {
@@ -195,6 +196,7 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null);
   const [posters, setPosters] = useState<GeneratedPoster[]>([]);
   const [lastPrompt, setLastPrompt] = useState<string | null>(null);
+  const [lastBrief, setLastBrief] = useState<CreativeBrief | null>(null);
 
   // ── Reference image state ──
   const [assets, setAssets] = useState<BrandAsset[]>([]);
@@ -251,6 +253,7 @@ export default function Home() {
     setSceneInputs(defaults);
     setPosters([]);
     setLastPrompt(null);
+    setLastBrief(null);
     setError(null);
   }, [selectedSceneId]);
 
@@ -276,6 +279,7 @@ export default function Home() {
     setError(null);
     setPosters([]);
     setLastPrompt(null);
+    setLastBrief(null);
 
     try {
       const res = await fetch("/api/generate-scene", {
@@ -294,6 +298,7 @@ export default function Home() {
       if (!res.ok) throw new Error(data.error ?? "Generation failed");
       setPosters(data.posters);
       if (data.posters[0]?.prompt) setLastPrompt(data.posters[0].prompt);
+      if (data.posters[0]?.brief) setLastBrief(data.posters[0].brief);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Generation failed");
     } finally {
@@ -597,11 +602,40 @@ export default function Home() {
 
             {posters.length > 0 && (
               <div className="space-y-6">
-                {/* Prompt preview */}
-                {lastPrompt && (
-                  <div className="p-4 bg-white/3 border border-white/10 rounded-xl">
-                    <p className="text-xs uppercase tracking-widest text-white/30 mb-2">AI-Generated Prompt</p>
-                    <p className="text-xs text-white/50 leading-relaxed">{lastPrompt}</p>
+                {/* Creative Brief card */}
+                {lastBrief && (
+                  <div className="p-4 bg-white/3 border border-white/10 rounded-xl space-y-3">
+                    <p className="text-xs uppercase tracking-widest text-white/30">Creative Brief</p>
+                    <div className="grid grid-cols-2 gap-2 text-xs">
+                      {[
+                        { label: "Goal", value: lastBrief.goal },
+                        { label: "Mood", value: lastBrief.mood },
+                        { label: "Scene", value: lastBrief.scene },
+                        { label: "Subject", value: lastBrief.subject },
+                        { label: "Lighting", value: lastBrief.lighting },
+                        { label: "Composition", value: lastBrief.composition },
+                      ].map(({ label, value }) => (
+                        <div key={label} className="col-span-2 sm:col-span-1">
+                          <span className="text-white/30 font-semibold uppercase tracking-wide text-[10px]">{label}</span>
+                          <p className="text-white/60 mt-0.5 leading-snug">{value}</p>
+                        </div>
+                      ))}
+                    </div>
+                    {lastBrief.visualKeywords?.length > 0 && (
+                      <div className="flex flex-wrap gap-1 pt-1">
+                        {lastBrief.visualKeywords.map((kw) => (
+                          <span key={kw} className="px-2 py-0.5 rounded-full bg-white/5 border border-white/10 text-[10px] text-white/50">
+                            {kw}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                    {lastPrompt && (
+                      <details className="mt-1">
+                        <summary className="text-[10px] text-white/20 cursor-pointer hover:text-white/40">View full FAL prompt</summary>
+                        <p className="text-[10px] text-white/30 leading-relaxed mt-2 whitespace-pre-wrap">{lastPrompt}</p>
+                      </details>
+                    )}
                   </div>
                 )}
 
