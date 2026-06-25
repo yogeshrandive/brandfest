@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import fs from "fs";
 import path from "path";
 import { generateBackground } from "@/lib/imageAdapter";
+import { renderLogoAndFooter } from "@/lib/render";
 import { buildPromptFromBrief } from "@/lib/promptBuilder";
 import type { TextOverlayContent } from "@/lib/promptBuilder";
 import type { BrandConfig, PosterSize, CreativeBrief, VisualStyle } from "@/lib/types";
@@ -11,31 +12,9 @@ export const runtime = "nodejs";
 export const maxDuration = 300;
 
 const BRAND_PATH = path.join(process.cwd(), "config", "brand.json");
-const ASSETS_DIR = path.join(process.cwd(), "public", "brand");
 
 function loadBrand(): BrandConfig {
   return JSON.parse(fs.readFileSync(BRAND_PATH, "utf-8"));
-}
-
-function fileToDataUrl(filePath: string): string {
-  const buf = fs.readFileSync(filePath);
-  const ext = path.extname(filePath).slice(1).toLowerCase();
-  const mime = ext === "svg" ? "image/svg+xml" : `image/${ext === "jpg" ? "jpeg" : ext}`;
-  return `data:${mime};base64,${buf.toString("base64")}`;
-}
-
-function resolveReferenceImage(filename: string | undefined): string | undefined {
-  if (!filename) return undefined;
-  const filePath = path.join(ASSETS_DIR, filename);
-  if (!fs.existsSync(filePath)) return undefined;
-  return fileToDataUrl(filePath);
-}
-
-function findLogoFile(): string | undefined {
-  if (!fs.existsSync(ASSETS_DIR)) return undefined;
-  const files = fs.readdirSync(ASSETS_DIR);
-  const logo = files.find((f) => /logo/i.test(f) && /\.(png|jpg|jpeg|svg|webp)$/i.test(f));
-  return logo ? path.join(ASSETS_DIR, logo) : undefined;
 }
 
 function buildTextContent(inputs: Record<string, string>, brand: BrandConfig): TextOverlayContent {
@@ -54,14 +33,11 @@ function buildTextContent(inputs: Record<string, string>, brand: BrandConfig): T
 }
 
 interface GenerateImageRequest {
-  prompt: string;
   size: PosterSize;
   sceneId: string;
   inputs: Record<string, string>;
   brief?: CreativeBrief;
   visualStyle?: string;
-  referenceImage?: string;
-  referenceStrength?: number;
 }
 
 export async function POST(req: NextRequest) {
@@ -72,7 +48,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
   }
 
-  const { size, sceneId, inputs, brief, visualStyle, referenceImage, referenceStrength } = body;
+  const { size, sceneId, inputs, brief, visualStyle } = body;
 
   if (!size) {
     return NextResponse.json({ error: "size is required" }, { status: 400 });
@@ -88,35 +64,27 @@ export async function POST(req: NextRequest) {
   const brand = loadBrand();
   const { width, height } = SIZE_CONFIGS[size];
 
-  // Resolve reference image: explicit selection takes priority, then auto-detect logo
-  const explicitRef = resolveReferenceImage(referenceImage);
-  const logoPath = !explicitRef ? findLogoFile() : undefined;
-  const referenceImageUrl = explicitRef ?? (logoPath ? fileToDataUrl(logoPath) : undefined);
-  const hasLogoReference = !!referenceImageUrl;
-  const effectiveStrength = explicitRef ? (referenceStrength ?? 0.15) : 0.08;
-
-  // Build text overlay content from scene inputs
+  // Build text content from scene inputs, embed into FAL prompt
   const textContent = buildTextContent(inputs, brand);
-
-  // Rebuild prompt with text+logo sections embedded
   const finalPrompt = buildPromptFromBrief(
     brief,
     brand,
     size,
     (visualStyle as VisualStyle) ?? brand.visualStyle,
     textContent,
-    hasLogoReference
   );
 
+  // Stage 1: FAL generates background + text
   const { imageBuffer } = await generateBackground({
     prompt: finalPrompt,
     width,
     height,
-    referenceImageUrl,
-    referenceStrength: effectiveStrength,
   });
 
-  const dataUrl = `data:image/png;base64,${imageBuffer.toString("base64")}`;
+  // Stage 2: Satori composites logo (top-left) + contact footer (bottom) over FAL output
+  const posterBuffer = await renderLogoAndFooter(imageBuffer, brand, size);
+
+  const dataUrl = `data:image/png;base64,${posterBuffer.toString("base64")}`;
   const today = new Date().toISOString().split("T")[0];
   const filename = `${brand.name.toLowerCase().replace(/\s+/g, "-")}-${sceneId}-${size}-${today}.png`;
 

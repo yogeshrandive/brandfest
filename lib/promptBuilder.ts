@@ -131,32 +131,23 @@ export interface TextOverlayContent {
   fromName?: string;
 }
 
-function TextAndLogoSection(content: TextOverlayContent, brand: BrandConfig, hasLogoReference: boolean): string {
+function TextAndLogoSection(content: TextOverlayContent, brand: BrandConfig): string {
   const lines: string[] = [];
 
-  lines.push(`LOGO`);
-  if (hasLogoReference) {
-    lines.push(`A reference logo image is provided. Place it in the top-left corner at approximately 8% of image width.`);
-    lines.push(`Clear ${brand.colors.secondary} or dark background behind the logo. No competing visual element nearby.`);
-  } else {
-    lines.push(`Brand: ${brand.name}. Place a simple "${brand.name}" wordmark in the top-left corner.`);
-    lines.push(`Primary color: ${brand.colors.primary}. Background behind logo must be dark and uncluttered.`);
-  }
+  lines.push(`RESERVED ZONES — keep these areas visually clean, dark, and uncluttered`);
+  lines.push(`Top-left corner (15% width × 10% height): reserved for logo — no subjects, no bright elements, smooth dark background.`);
+  lines.push(`Bottom strip (full width × 10% height): reserved for contact footer — keep dark, flat, no important scene content.`);
 
   lines.push(``);
   lines.push(`TEXT TO RENDER IN THE IMAGE`);
-  lines.push(`Use clean, legible sans-serif typography. All text must be sharp and correctly spelled.`);
+  lines.push(`Use clean, legible sans-serif typography. All text must be sharp, correctly spelled, and properly aligned.`);
+  lines.push(`Place all text in the lower-center area (between 50%–88% from top), above the bottom reserved strip.`);
   lines.push(``);
-  lines.push(`Headline (large, bold, bottom zone): "${content.headline}"`);
-  if (content.subtext) lines.push(`Subtext (medium, below headline): "${content.subtext}"`);
-  if (content.cta) lines.push(`CTA Button (accent background ${brand.colors.primary}, dark text): "${content.cta}"`);
+  lines.push(`Headline (large, bold, prominent): "${content.headline}"`);
+  if (content.subtext) lines.push(`Subtext (medium weight, below headline): "${content.subtext}"`);
+  if (content.cta) lines.push(`CTA button (${brand.colors.primary} background, contrasting text): "${content.cta}"`);
   if (content.validity) lines.push(`Validity note (small, below CTA): "${content.validity}"`);
-  if (content.fromName) lines.push(`From (small, near headline): "${content.fromName}"`);
-
-  lines.push(``);
-  lines.push(`Contact Bar (bottom strip, small text):`);
-  lines.push(`"${brand.contact.phone}  •  ${brand.contact.website}  •  ${brand.contact.handle}"`);
-  lines.push(`Text color: ${brand.colors.accent}. Background: semi-transparent dark strip.`);
+  if (content.fromName) lines.push(`From line (small text, near headline): "${content.fromName}"`);
 
   return lines.join("\n");
 }
@@ -176,7 +167,6 @@ export function buildPromptFromBrief(
   size: PosterSize,
   visualStyle: VisualStyle,
   textContent?: TextOverlayContent,
-  hasLogoReference?: boolean
 ): string {
   const embedText = !!textContent;
 
@@ -195,7 +185,7 @@ export function buildPromptFromBrief(
   ];
 
   if (embedText && textContent) {
-    sections.push(TextAndLogoSection(textContent, brand, hasLogoReference ?? false));
+    sections.push(TextAndLogoSection(textContent, brand));
   } else {
     sections.splice(7, 0, BrandPlacementSection(brief));
   }

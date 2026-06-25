@@ -305,20 +305,17 @@ export default function Home() {
         setLoading(false);
         setImageLoading(true);
         await Promise.all(
-          generatedPrompts.map(async ({ size, prompt }) => {
+          generatedPrompts.map(async ({ size }) => {
             try {
               const imgRes = await fetch("/api/generate-image", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
-                  prompt,
                   size,
                   sceneId: selectedSceneId,
                   inputs: sceneInputs,
                   brief,
                   visualStyle,
-                  referenceImage: selectedReference ?? undefined,
-                  referenceStrength,
                 }),
               });
               const imgData = await imgRes.json();

@@ -52,6 +52,70 @@ export interface OverlayContent {
   validity?: string;
 }
 
+export async function renderLogoAndFooter(
+  backgroundBuffer: Buffer,
+  brand: BrandConfig,
+  size: PosterSize
+): Promise<Buffer> {
+  loadFonts();
+
+  const { width, height } = SIZE_CONFIGS[size];
+  const zones = getSafeZones(size, width, height);
+
+  const bgBuffer = await resizeBackground(backgroundBuffer, width, height);
+  const bgBase64 = `data:image/png;base64,${bgBuffer.toString("base64")}`;
+  const logoBase64 = loadLogoBase64(brand.logoPath);
+
+  const primary = brand.colors.primary;
+  const accent = brand.colors.accent;
+  const contactSize = size === "square" ? 22 : 24;
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const element: any = {
+    type: "div",
+    props: {
+      style: { width, height, position: "relative", display: "flex", fontFamily: "Poppins", overflow: "hidden" },
+      children: [
+        // Background
+        { type: "img", props: { src: bgBase64, style: { position: "absolute", top: 0, left: 0, width, height, objectFit: "cover" } } },
+
+        // Logo — top-left
+        logoBase64
+          ? { type: "img", props: { src: logoBase64, style: { position: "absolute", top: zones.logo.top, left: zones.logo.right, width: zones.logo.width, height: zones.logo.height, objectFit: "contain" } } }
+          : { type: "div", props: { style: { position: "absolute", top: zones.logo.top, left: zones.logo.right, backgroundColor: primary, borderRadius: 8, padding: "8px 16px", display: "flex", alignItems: "center" }, children: [{ type: "span", props: { style: { color: "#fff", fontWeight: 700, fontSize: 20 }, children: brand.name } }] } },
+
+        // Contact footer — bottom strip
+        {
+          type: "div",
+          props: {
+            style: { position: "absolute", bottom: 0, left: 0, right: 0, height: zones.contact.height, backgroundColor: hexToRgba("#000000", 0.65), borderTop: `2px solid ${hexToRgba(primary, 0.4)}`, display: "flex", alignItems: "center", justifyContent: "center", gap: 28, paddingLeft: 40, paddingRight: 40 },
+            children: [
+              { type: "div", props: { style: { color: accent, fontSize: contactSize, fontWeight: 400 }, children: brand.contact.phone } },
+              { type: "div", props: { style: { color: hexToRgba(accent, 0.45), fontSize: contactSize }, children: "•" } },
+              { type: "div", props: { style: { color: primary, fontSize: contactSize, fontWeight: 600 }, children: brand.contact.website } },
+              { type: "div", props: { style: { color: hexToRgba(accent, 0.45), fontSize: contactSize }, children: "•" } },
+              { type: "div", props: { style: { color: hexToRgba(accent, 0.8), fontSize: contactSize }, children: brand.contact.handle } },
+            ],
+          },
+        },
+      ],
+    },
+  };
+
+  const svg = await satori(element, {
+    width,
+    height,
+    fonts: [
+      { name: "Poppins", data: fontRegular!, weight: 400, style: "normal" },
+      { name: "Poppins", data: fontSemiBold!, weight: 600, style: "normal" },
+      { name: "Poppins", data: fontBold!, weight: 700, style: "normal" },
+    ],
+  });
+
+  const resvg = new Resvg(svg, { fitTo: { mode: "width", value: width } });
+  return resvg.render().asPng();
+}
+
 export async function renderPoster(
   backgroundBuffer: Buffer,
   content: OverlayContent,
