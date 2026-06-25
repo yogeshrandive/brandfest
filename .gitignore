@@ -41,6 +41,3 @@ yarn-error.log*
 next-env.d.ts
 .env.local
 .env
-
-# fonts downloaded at build time
-/fonts/*.ttf

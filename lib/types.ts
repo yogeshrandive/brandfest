@@ -113,6 +113,12 @@ export interface CreativeBrief {
   visualKeywords: string[];
   colorDirective: string;
   negativeElements: string[];
+  // Extended fields for Canva-quality output
+  emotions: string[];
+  cameraDirection: string;
+  brandPlacement: string;
+  typographySafeZone: string;
+  businessRelevanceCues: string[];
 }
 
 // Scene system
