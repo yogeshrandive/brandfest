@@ -1,0 +1,40 @@
+{
+  "id": "agm-hall",
+  "name": "AGM & Committee Meeting",
+  "icon": "📋",
+  "category": "event",
+  "description": "Annual General Meeting or committee meeting setting for governance campaigns",
+  "visualTheme": "clean-modern",
+  "briefInstructions": "Commission a professional governance meeting background artwork. The environment is a housing society AGM hall or committee meeting room: rows of chairs with residents seated, a projection screen at front (blank or very softly blurred), a committee table with printed agendas, formal but warm lighting, a banner or board showing the society name. Several members are engaged in natural discussion — some seated, one standing at the front. The atmosphere communicates: organized governance, community democracy, professional management. NO software UI on screen, NO readable interfaces, NO laptops open with visible dashboards. The image communicates civic responsibility and organized community leadership. Bottom 30% smooth dark for text.",
+  "inputs": [
+    {
+      "key": "offerTitle",
+      "label": "Event or Campaign Headline",
+      "type": "text",
+      "required": true,
+      "placeholder": "e.g. AGM Season 2025, Annual General Meeting",
+      "suggestions": ["AGM Season 2025", "Annual General Meeting", "Committee Elections", "Bye-law Review Meeting", "Budget Approval Season"]
+    },
+    {
+      "key": "offerDescription",
+      "label": "Supporting Message",
+      "type": "text",
+      "required": true,
+      "placeholder": "e.g. Stay compliant, stay organized with SocietyBee",
+      "suggestions": [
+        "Stay compliant, stay organized with SocietyBee",
+        "Manage AGM agendas, minutes, and resolutions digitally",
+        "Complete bye-law compliance built in",
+        "From agenda to minutes — SocietyBee handles it all"
+      ]
+    },
+    {
+      "key": "cta",
+      "label": "Call to Action",
+      "type": "text",
+      "required": false,
+      "placeholder": "e.g. Get AGM Ready",
+      "suggestions": ["Get AGM Ready", "Book a Demo", "See Features", "Talk to Us"]
+    }
+  ]
+}

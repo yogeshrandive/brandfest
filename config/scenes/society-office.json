@@ -1,0 +1,47 @@
+{
+  "id": "society-office",
+  "name": "Society Office",
+  "icon": "🏢",
+  "category": "offer",
+  "description": "Professional society management office setting for corporate campaigns",
+  "visualTheme": "product-premium",
+  "briefInstructions": "Commission a premium corporate office background. The environment is a modern, well-organized society management office: warm wood furniture, printed financial registers stacked neatly, a framed society notice board, large windows showing residential towers outside, warm ambient indoor lighting. Two professionals — a CA or treasurer and a committee member — are engaged in natural discussion over printed documents. One laptop is present, open, screen intentionally blurred. NO readable screens, NO dashboards, NO software UI visible. The image communicates: organized, professional, trustworthy. Bottom 30% must be smooth dark gradient for text.",
+  "inputs": [
+    {
+      "key": "offerTitle",
+      "label": "Campaign Headline",
+      "type": "text",
+      "required": true,
+      "placeholder": "e.g. Simplify Society Accounts, Digital Society Management",
+      "suggestions": ["Simplify Society Accounts", "Digital Society Management", "Smart Billing, Zero Commission", "One Platform, All Societies"]
+    },
+    {
+      "key": "offerDescription",
+      "label": "Supporting Message",
+      "type": "text",
+      "required": true,
+      "placeholder": "e.g. Billing, accounts & compliance — all in one place",
+      "suggestions": [
+        "Billing, accounts & compliance — all in one place",
+        "Trusted by 500+ housing societies across India",
+        "Manage multiple societies from a single login",
+        "CA-approved. Committee-ready."
+      ]
+    },
+    {
+      "key": "cta",
+      "label": "Call to Action",
+      "type": "text",
+      "required": true,
+      "placeholder": "e.g. Book a Free Demo",
+      "suggestions": ["Book a Free Demo", "Get Started Today", "Talk to Us", "See How It Works"]
+    },
+    {
+      "key": "subtext",
+      "label": "Additional Note",
+      "type": "text",
+      "required": false,
+      "placeholder": "e.g. Free setup. No contracts."
+    }
+  ]
+}

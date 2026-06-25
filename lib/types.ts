@@ -110,19 +110,21 @@ export interface CreativeBrief {
   composition: string;
   reservedAreas: ReservedArea[];
   backgroundStyle: string;
+  backgroundQuality: string;
   visualKeywords: string[];
   colorDirective: string;
   negativeElements: string[];
-  // Extended fields for Canva-quality output
   emotions: string[];
   cameraDirection: string;
   brandPlacement: string;
   typographySafeZone: string;
   businessRelevanceCues: string[];
+  designIntent: string[];
+  visualHierarchy: string[];
 }
 
 // Scene system
-export type SceneCategory = "festival" | "offer" | "event";
+export type SceneCategory = "festival" | "offer" | "event" | "awareness";
 
 export type SceneInputType = "text" | "select" | "textarea" | "date";
 

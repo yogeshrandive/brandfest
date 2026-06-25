@@ -5,7 +5,7 @@
   "category": "offer",
   "description": "Promotional creatives for discounts, launches and limited-time deals",
   "visualTheme": "product-premium",
-  "briefInstructions": "This is a lead-generation creative. The image must convey premium value and urgency. Show the product or service in use — app on a screen, dashboard on a laptop, or the physical environment where this business operates. Target audience (the actual users) should appear if possible — engaged, professional, satisfied. The offer details will be rendered as text overlay, so reserve clear space at the bottom. The image itself communicates aspiration and trust, not the offer text.",
+  "briefInstructions": "Commission premium professional background artwork for a lead-generation campaign. The image must communicate trust, organization, and modern professionalism through environment alone — NO dashboards, NO software UI, NO readable screens. Show society management professionals (CA, treasurer, committee member) in their natural work environment: a well-organized office with printed financial registers, warm lighting, modern furniture, residential complex visible outside. Technology is implied — one laptop open, screen softly blurred. The image communicates aspiration and competence, not the offer. Offer details are composited on top. Bottom 30% must be smooth and dark for headline text.",
   "inputs": [
     {
       "key": "offerTitle",

@@ -2,7 +2,7 @@
   "name": "SocietyBee",
   "logoPath": "public/brand/societybee-logo.png",
   "industry": "Software",
-  "subCategory": "Billing, Accounting & Bye-Law Compliance for Co-operative Housing Societies",
+  "subCategory": "Housing Society Management",
   "tagline": "Let the Bee Manage, You Relax",
   "website": "societybee.in",
   "colors": {
@@ -17,7 +17,28 @@
     "handle": "@societybee",
     "address": ""
   },
-  "businessDescription": "SocietyBee is billing, accounting and bye-law compliance software for Indian co-operative housing societies, built for the CAs and treasurers who run the books, not for gate passes and visitor logs. Multi-society from one login, zero payment-gateway commission, and an AI assistant (BeeAgent) that reads your ledger and bye-laws.",
+  "businessDescription": "SocietyBee is digital management software for Indian co-operative housing societies — billing, accounting, and bye-law compliance built for the CAs and treasurers who run the books. Multi-society from one login, zero payment-gateway commission, and an AI assistant that reads your ledger and bye-laws.",
+  "businessDomain": [
+    "Residential Communities",
+    "Co-operative Housing Societies",
+    "Digital Society Management",
+    "Accounting and Financial Compliance",
+    "Bye-law Governance"
+  ],
+  "societyVisualEnvironments": [
+    "Modern apartment entrance lobby",
+    "Visitor management kiosk",
+    "Society management office",
+    "Committee meeting room",
+    "Maintenance supervisor office",
+    "Printed financial registers and ledgers",
+    "Residential tower exterior",
+    "Community notice board",
+    "Clubhouse interior",
+    "AGM hall with members",
+    "Landscaped society garden",
+    "Building entrance gate with security"
+  ],
   "brandStyle": "Premium",
   "brandVoice": "Professional",
   "targetAudience": [
@@ -33,13 +54,13 @@
   "brandSummary": "",
   "visualDirection": "",
   "industryVisualKeywords": [
-    "apartment buildings",
-    "housing society",
-    "committee members",
-    "ledger and accounts",
-    "digital dashboard",
-    "urban India",
-    "professional office setting",
-    "modern residential complex"
+    "premium residential community",
+    "housing society management",
+    "professional committee members",
+    "modern Indian architecture",
+    "organized financial management",
+    "urban residential towers",
+    "community governance",
+    "digital organization"
   ]
 }

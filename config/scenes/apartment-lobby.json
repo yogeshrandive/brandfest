@@ -1,0 +1,40 @@
+{
+  "id": "apartment-lobby",
+  "name": "Apartment Lobby",
+  "icon": "🏛️",
+  "category": "offer",
+  "description": "Premium residential lobby for brand awareness and awareness campaigns",
+  "visualTheme": "luxury-dark",
+  "briefInstructions": "Commission premium residential interior background artwork. The environment is a modern Indian apartment complex lobby: marble or granite floor, clean reception desk, tasteful indoor plants, warm lighting from pendant fixtures, elevator doors in background, high ceiling. One or two residents walking through naturally, or a committee member at the reception desk in natural conversation. The atmosphere communicates: premium, organized, modern, well-managed. NO software, NO screens, NO digital interfaces. The image should feel like a luxury real estate advertisement background. Top-left and bottom 30% must be dark and uncluttered for logo and text overlay.",
+  "inputs": [
+    {
+      "key": "offerTitle",
+      "label": "Campaign Headline",
+      "type": "text",
+      "required": true,
+      "placeholder": "e.g. Well-Managed Societies, Modern Living",
+      "suggestions": ["Well-Managed Societies", "Modern Living, Smart Management", "Community That Works", "The Organized Society"]
+    },
+    {
+      "key": "offerDescription",
+      "label": "Supporting Message",
+      "type": "text",
+      "required": true,
+      "placeholder": "e.g. SocietyBee brings order to every residential community",
+      "suggestions": [
+        "SocietyBee brings order to every residential community",
+        "From billing to bye-laws — everything in one place",
+        "Trusted by housing societies across India",
+        "Modern software for modern communities"
+      ]
+    },
+    {
+      "key": "cta",
+      "label": "Call to Action",
+      "type": "text",
+      "required": false,
+      "placeholder": "e.g. Learn More",
+      "suggestions": ["Learn More", "Book a Demo", "Get Started", "Explore Features"]
+    }
+  ]
+}

@@ -1,0 +1,44 @@
+{
+  "id": "clubhouse",
+  "name": "Clubhouse & Events",
+  "icon": "🎪",
+  "category": "event",
+  "description": "Society clubhouse for community events and celebration campaigns",
+  "visualTheme": "vibrant-festive",
+  "briefInstructions": "Commission a warm community gathering background artwork. The environment is a modern residential society clubhouse interior: well-designed hall, comfortable seating, tasteful decorations appropriate to the occasion, warm ambient lighting, large windows or glass walls, community banners or society name visible subtly in background. Residents — a diverse mix of families, seniors, young professionals — are gathered for a community event: some seated, some mingling, warm natural interaction. The atmosphere communicates: active community, quality of life, well-organized society life. NO product screens, NO software UI. Pure community warmth. Bottom 30% must be smooth and dark for text overlay.",
+  "inputs": [
+    {
+      "key": "festival",
+      "label": "Event or Festival",
+      "type": "text",
+      "required": false,
+      "placeholder": "e.g. Annual Day, Diwali Celebration, Sports Day",
+      "suggestions": [
+        "Annual Day", "Diwali Celebration", "Sports Day", "Cultural Night",
+        "Children's Day", "Senior Citizens Day", "New Year Party"
+      ]
+    },
+    {
+      "key": "greetingMessage",
+      "label": "Event Message",
+      "type": "textarea",
+      "required": true,
+      "placeholder": "e.g. Celebrating community, connection, and great management",
+      "suggestions": [
+        "Celebrating community, connection, and great society management",
+        "Great societies are built by engaged communities",
+        "Every event is better in a well-managed society",
+        "Bringing your community together — powered by SocietyBee"
+      ],
+      "randomizable": true
+    },
+    {
+      "key": "cta",
+      "label": "Call to Action",
+      "type": "text",
+      "required": false,
+      "placeholder": "e.g. Join Us, Learn More",
+      "suggestions": ["Join Us", "Learn More", "Book a Demo", "See Our Features"]
+    }
+  ]
+}

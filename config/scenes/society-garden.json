@@ -1,0 +1,43 @@
+{
+  "id": "society-garden",
+  "name": "Society Garden & Community",
+  "icon": "🌿",
+  "category": "festival",
+  "description": "Outdoor community garden for festive greetings and community campaigns",
+  "visualTheme": "warm-earthy",
+  "briefInstructions": "Commission warm outdoor community background artwork. The environment is a landscaped society garden or courtyard: manicured grass, decorative plants, stone pathways, premium outdoor furniture, modern apartment towers visible in soft background. Families and neighbours are interacting naturally in the outdoor space — children playing, adults conversing in small groups, a warm community gathering feel. Lighting is golden-hour or pleasant daylight. The atmosphere communicates: safe, thriving community, well-managed society, quality of life. NO product, NO technology, NO screens. Pure community and environment. Bottom 30% must graduate to dark for text overlay. This scene works for both festive greetings and awareness campaigns.",
+  "inputs": [
+    {
+      "key": "festival",
+      "label": "Festival / Occasion",
+      "type": "text",
+      "required": false,
+      "placeholder": "e.g. Diwali, New Year (leave blank for generic community)",
+      "suggestions": [
+        "Diwali", "New Year", "Holi", "Eid", "Christmas", "Navratri",
+        "Ganesh Chaturthi", "Independence Day", "Republic Day"
+      ]
+    },
+    {
+      "key": "greetingMessage",
+      "label": "Greeting or Campaign Message",
+      "type": "textarea",
+      "required": true,
+      "placeholder": "e.g. Celebrating the community that calls this home",
+      "suggestions": [
+        "Celebrating the community that calls this home",
+        "May this festival bring joy and togetherness to your society",
+        "Wishing your community a joyful celebration",
+        "A thriving community deserves a well-managed society"
+      ],
+      "randomizable": true
+    },
+    {
+      "key": "fromName",
+      "label": "From (Sender Name)",
+      "type": "text",
+      "required": false,
+      "placeholder": "Defaults to your business name"
+    }
+  ]
+}

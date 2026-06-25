@@ -1,50 +1,56 @@
 import { callLLM } from "./llmAdapter";
 import type { BrandConfig, SceneDefinition, SceneInputValues, PosterSize, CreativeBrief } from "./types";
 
-const SYSTEM_PROMPT = `You are a Senior Creative Director at a global advertising agency specializing in premium SaaS and corporate marketing for Indian businesses.
+const SYSTEM_PROMPT = `You are an Art Director briefing a background art commission for a premium corporate advertising campaign.
 
 Your job is NOT to write an image prompt.
+Your job is to analyse the business, campaign, and scene — then return a structured Creative Brief as JSON.
 
-Your job is to analyse the business, the campaign, and the scene — then return a structured Creative Brief as JSON.
+The artwork you are commissioning is BACKGROUND ART ONLY.
+No text will appear in the image. No logo. No UI. No screens.
+Typography, logo, and CTA will be composited on top by the design system afterwards.
 
-Think like a designer, not a writer:
-- Use NOUNS and VISUAL DESCRIPTORS, not long sentences
-- Scene descriptions must read like a shot list, not a story
-- Every detail must be composable into a real advertising image
+Think like a photographer commissioning hero editorial artwork:
+- Use VISUAL NOUNS only — not sentences or explanations
+- Scene = environment description (materials, architecture, atmosphere)
+- Subject = camera focus (who, position, natural action)
+- Every detail must produce a real, printable advertising photograph
 
 Rules:
-- scene: write in visual noun phrases — "luxury apartment courtyard", "families in festive attire", "color powder in air" — NOT paragraphs
-- subject: describe what the camera focuses on — who, where, doing what — visual and specific
-- emotions: list what the viewer should FEEL, not what is happening
-- cameraDirection: specify lens, angle, framing like a cinematographer — exact and actionable
-- brandPlacement: specific position, size, contrast requirement — never vague
-- typographySafeZone: describe WHERE the smooth, uninterrupted background area is for headline copy
-- businessRelevanceCues: list 3-5 subtle visual elements specific to THIS industry/business — not generic office
-- Reserved areas are CRITICAL — the text overlay engine depends on them
-- visualKeywords must be specific to THIS industry — never generic SaaS words
-- negativeElements must prevent common AI mistakes for this specific scene type
+- scene: environment noun phrases — "marble-floored apartment lobby", "sunlit society garden", "warm committee meeting room" — NOT stories
+- subject: who the camera focuses on, position, natural candid action — specific and visual
+- Do NOT include product UI, dashboards, or software screens in scene or subject
+- designIntent: exactly 7 professional trait words that define what the image should communicate
+- visualHierarchy: ordered list of 4-5 elements from most to least visually prominent
+- businessRelevanceCues: 3-5 environment/prop details specific to housing society management (not generic SaaS)
+- typographySafeZone: exact area for text — no faces, no bright highlights, must support white type
+- backgroundQuality: lighting, texture, and material descriptors for the environment
+- negativeElements: things specific to THIS scene that AI commonly gets wrong
 
 Return ONLY valid JSON matching this exact structure:
 {
-  "goal": "one sentence — campaign objective and WHY this image exists",
+  "goal": "one sentence — what this background artwork must communicate visually",
   "mood": "2-3 precise mood words",
-  "scene": "visual noun phrases only — location, atmosphere, elements — no full sentences",
-  "subject": "camera focus — who, position, action — visual and specific",
+  "scene": "environment noun phrases only — location, materials, atmosphere — no full sentences",
+  "subject": "camera focus — who, position, natural candid action — visual and specific",
   "lighting": "exact lighting direction, quality, and color temperature",
-  "composition": "visual weight description — where subject sits, foreground/midground/background layers",
+  "composition": "visual weight — where subject sits, foreground/midground/background layers, quadrant weighting",
   "reservedAreas": [
     { "position": "bottom", "percentage": 30, "purpose": "headline and CTA text overlay" },
     { "position": "top-left", "percentage": 8, "purpose": "logo placement" }
   ],
   "backgroundStyle": "3-5 word visual style descriptor",
+  "backgroundQuality": "lighting quality, material textures, architectural finish — noun phrases",
   "visualKeywords": ["keyword1", "keyword2", "keyword3", "keyword4", "keyword5"],
-  "colorDirective": "specific instruction on where and how to use each brand color",
-  "negativeElements": ["specific thing to avoid 1", "specific thing to avoid 2", "specific thing to avoid 3", "specific thing to avoid 4"],
-  "emotions": ["Trust", "Community", "Celebration"],
-  "cameraDirection": "lens mm, angle, framing style, depth of field",
-  "brandPlacement": "exact position, approximate size, background contrast requirement",
-  "typographySafeZone": "describe the smooth uninterrupted area where headline copy will be placed",
-  "businessRelevanceCues": ["industry-specific visual cue 1", "industry-specific visual cue 2", "industry-specific visual cue 3"]
+  "colorDirective": "specific instruction on where brand colors appear naturally in the environment",
+  "negativeElements": ["scene-specific AI mistake 1", "scene-specific AI mistake 2", "scene-specific AI mistake 3"],
+  "emotions": ["Emotion1", "Emotion2", "Emotion3"],
+  "cameraDirection": "lens mm, angle, framing, depth of field — like a cinematographer",
+  "brandPlacement": "exact position and size for logo — always top-left, 8% image width, dark background",
+  "typographySafeZone": "exact area description — smooth, dark, no faces, supports white typography",
+  "businessRelevanceCues": ["housing-society-specific prop 1", "housing-society-specific prop 2", "housing-society-specific prop 3"],
+  "designIntent": ["Professional", "Premium", "Trustworthy", "Modern", "Organized", "Technology-Enabled", "Community-Focused"],
+  "visualHierarchy": ["Primary: people collaborating", "Secondary: premium environment", "Third: architectural context", "Fourth: subtle technology cues"]
 }`;
 
 export async function callCreativeDirector(opts: {
@@ -58,31 +64,28 @@ export async function callCreativeDirector(opts: {
 
   const isStory = size === "story";
   const aspectNote = isStory
-    ? "Vertical portrait (9:16). Main subject upper 60%. Bottom 35% must be smooth and dark for text overlay. Top-left corner clear for logo."
-    : "Square (1:1). Bottom 30% must be smooth and dark for text overlay. Main subject centered or right-aligned. Top-left corner clear for logo.";
+    ? "Vertical 9:16. Subject fills upper 60%. Bottom 35% smooth and dark for text. Top-left clear for logo."
+    : "Square 1:1. Bottom 30% smooth and dark for text. Subject center or right-weighted. Top-left clear for logo.";
 
   const dna = (brand as unknown as Record<string, unknown>).brandVisualDNA as {
     colorNames?: { primary?: string; secondary?: string };
-    patterns?: string[];
     settings?: string[];
     people?: string[];
-    products?: string[];
   } | undefined;
+
+  const domains = (brand as unknown as Record<string, unknown>).businessDomain as string[] | undefined;
+  const environments = (brand as unknown as Record<string, unknown>).societyVisualEnvironments as string[] | undefined;
 
   const brandBlock = `
 Business: ${brand.name}
-Industry: ${brand.subCategory || brand.industry}
+Business Domain: ${domains?.join(", ") ?? brand.subCategory ?? brand.industry}
 Description: ${brand.businessDescription ?? ""}
 Brand Style: ${brand.brandStyle ?? "Premium"} | Voice: ${brand.brandVoice ?? "Professional"}
-Brand Personality Traits: Trustworthy, Professional, Technology-forward, Community-focused, Modern Indian
 Target Audience: ${Array.isArray(brand.targetAudience) ? brand.targetAudience.join("; ") : brand.targetAudience ?? ""}
 Primary Color: ${brand.colors.primary}${dna?.colorNames?.primary ? ` (${dna.colorNames.primary})` : ""}
 Secondary Color: ${brand.colors.secondary}${dna?.colorNames?.secondary ? ` (${dna.colorNames.secondary})` : ""}
-Accent Color: ${brand.colors.accent}
-Brand Summary: ${(brand as unknown as Record<string, string>).brandSummary ?? ""}
-Visual DNA — Settings: ${dna?.settings?.join(", ") ?? ""}
-Visual DNA — People: ${dna?.people?.join(", ") ?? ""}
-Visual DNA — Industry Keywords: ${(brand.industryVisualKeywords ?? []).join(", ")}
+Accent: ${brand.colors.accent}
+Visual Environments (use these for businessRelevanceCues): ${environments?.join(", ") ?? dna?.settings?.join(", ") ?? ""}
 `.trim();
 
   const campaignBlock = Object.entries(inputs)
@@ -97,7 +100,7 @@ Visual DNA — Industry Keywords: ${(brand.industryVisualKeywords ?? []).join(",
 BRAND
 ${brandBlock}
 
-CREATIVE TYPE
+SCENE TYPE
 ${scene.name} — ${scene.description}
 
 SCENE INSTRUCTIONS
@@ -120,7 +123,7 @@ Generate the Creative Brief JSON now.
       { role: "system", content: SYSTEM_PROMPT },
       { role: "user", content: userMessage },
     ],
-    { temperature: 0.7, max_tokens: 1000 }
+    { temperature: 0.7, max_tokens: 1200 }
   );
 
   const json = raw.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "").trim();
@@ -136,43 +139,61 @@ export function buildFallbackBrief(opts: {
 }): CreativeBrief {
   const { scene, inputs, brand, size } = opts;
   const isStory = size === "story";
-
   const isFestival = scene.category === "festival";
   const festival = inputs.festival ?? "";
   const offerTitle = inputs.offerTitle ?? "";
+  const bottomPct = isStory ? 35 : 30;
 
   return {
     goal: isFestival
-      ? `Generate hero artwork for a premium ${festival} greeting campaign for ${brand.name} — evoke trust, community, and celebration`
-      : `Generate hero artwork for a ${offerTitle} offer campaign for ${brand.name} — convey premium value and urgency`,
-    mood: isFestival ? "Warm Celebratory Premium" : "Confident Urgent Premium",
+      ? `Premium background artwork for a ${festival} greeting campaign — communicate community warmth and celebration through environment and people alone`
+      : `Premium background artwork for a ${offerTitle} campaign — communicate professional trust and value through environment and people alone`,
+    mood: isFestival ? "Warm Celebratory Premium" : "Confident Professional Premium",
     scene: isFestival
-      ? `Modern luxury residential complex courtyard, families celebrating ${festival}, color powder in air, festive attire, premium landscaped gardens, elegant architecture`
-      : `Modern Indian ${brand.subCategory || brand.industry} environment, professionals engaged, premium office interior, clean minimal aesthetic`,
+      ? `Modern luxury residential complex courtyard, festive string lights overhead, manicured garden, premium stone pathways, warm evening atmosphere, elegant apartment towers in background`
+      : `Modern Indian society management office, warm ambient lighting, premium wood furniture, printed financial registers on desk, large windows with residential complex view`,
     subject: isFestival
-      ? "Three families, center-right frame, natural candid celebration moment, children playing foreground, adults interacting midground"
-      : `Professional target audience using ${brand.name} product, satisfied expression, premium environment`,
-    lighting: isFestival ? "Warm golden-hour sunlight, soft natural shadows, festive color glow" : "Clean diffused studio lighting, warm corporate tones, soft highlights",
+      ? "Three families in festive attire, natural candid interaction, children in foreground, adults smiling in midground, all right-center frame"
+      : "Two committee members reviewing printed financial documents, natural engaged discussion, one laptop open screen blurred, warm confident expressions",
+    lighting: isFestival
+      ? "Warm golden-hour sunlight from right, soft festive string light glow, natural evening color warmth"
+      : "Warm diffused indoor light, soft window light from left, clean professional ambiance",
     composition: isStory
-      ? "Subject fills upper 60%, hero families right-center, negative space bottom for text, foreground color powder, background apartment towers"
-      : "Subject right-center, negative space bottom-left for text, foreground color powder, midground families, background residential towers",
+      ? "Subject fills upper 60%, hero group right-center, foreground decorative elements, background architecture soft-blurred, bottom 35% smooth dark gradient"
+      : "Subject right-center quadrant, foreground desk textures, background soft-blurred architecture, bottom-left open and smooth, visual weight upper-right",
     reservedAreas: [
-      { position: "bottom", percentage: isStory ? 35 : 30, purpose: "headline and CTA text overlay" },
+      { position: "bottom", percentage: bottomPct, purpose: "headline and CTA text overlay" },
       { position: "top-left", percentage: 8, purpose: "logo placement" },
     ],
     backgroundStyle: "Photorealistic premium commercial lifestyle",
+    backgroundQuality: "Luxury architecture, warm natural light, premium materials, rich wood and marble textures, soft depth of field",
     visualKeywords: [
-      brand.subCategory || brand.industry,
-      ...(brand.industryVisualKeywords ?? []).slice(0, 4),
+      "premium residential community",
+      "housing society management",
+      "professional committee",
+      "modern Indian architecture",
+      "trust and organization",
     ],
-    colorDirective: `Use ${brand.colors.primary} as subtle accent in clothing or decor. ${brand.colors.secondary} for depth in shadows. Keep bottom zone dark and smooth.`,
-    negativeElements: ["text overlays", "watermarks", "distorted faces", "extra fingers", "malformed hands", "blurry faces", "floating objects"],
-    emotions: isFestival ? ["Trust", "Community", "Belonging", "Celebration", "Prosperity"] : ["Confidence", "Value", "Urgency", "Trust", "Professionalism"],
-    cameraDirection: "Eye-level shot, 35mm lens, natural depth of field, wide composition, center-weighted framing, professional advertising photography",
-    brandPlacement: `Logo top-left corner, approximately 8% image width, clear 20px margin on all sides, placed over dark uncluttered background area`,
-    typographySafeZone: `Bottom ${isStory ? "35" : "30"}% of image — smooth, dark, uninterrupted background. No faces, no bright highlights, no color splashes in this zone. Gradient to dark if needed.`,
+    colorDirective: `${brand.colors.primary} appears subtly in accent details — cushions, plants, warm lights. ${brand.colors.secondary} provides depth in shadows and dark areas. Bottom zone graduates to dark for text readability.`,
+    negativeElements: [
+      "software dashboards", "UI screenshots", "readable laptop screens",
+      "generic office cubicles", "empty white walls", "posed stock photography",
+    ],
+    emotions: isFestival
+      ? ["Community", "Belonging", "Celebration", "Warmth", "Prosperity"]
+      : ["Trust", "Professionalism", "Confidence", "Reliability", "Modern"],
+    cameraDirection: "Eye-level, 35mm lens, f/2.8 natural depth of field, wide composition, center-weighted framing",
+    brandPlacement: "Logo top-left, approximately 8% image width, clear 20px margin, placed over dark smooth background area",
+    typographySafeZone: `Bottom ${bottomPct}% of image — smooth dark gradient, no faces, no bright highlights, no architectural lines crossing this zone. Must support white sans-serif typography at any size.`,
     businessRelevanceCues: isFestival
-      ? ["modern residential complex entrance", "society clubhouse", "well-maintained common area", "premium landscaping"]
-      : ["modern office interior", "professional workspace", "corporate meeting room", "digital interface on screen"],
+      ? ["modern residential complex entrance", "society clubhouse exterior", "manicured common area garden", "premium apartment towers"]
+      : ["society management office interior", "printed financial registers and ledgers", "committee meeting table", "residential complex view through window"],
+    designIntent: ["Professional", "Premium", "Trustworthy", "Modern", "Organized", "Technology-Enabled", "Community-Focused"],
+    visualHierarchy: [
+      "Primary: people in natural candid interaction",
+      "Secondary: premium environment and workspace",
+      "Third: residential architecture context",
+      "Fourth: subtle technology cues (implied)",
+    ],
   };
 }

@@ -1,0 +1,40 @@
+{
+  "id": "building-entrance",
+  "name": "Building Entrance",
+  "icon": "🚪",
+  "category": "offer",
+  "description": "Premium apartment entrance and gate setting for brand launch campaigns",
+  "visualTheme": "luxury-dark",
+  "briefInstructions": "Commission a premium residential entrance background artwork. The environment is a modern Indian apartment complex entrance: a well-designed gate or entrance archway, a security cabin or visitor management point, intercom panels, a well-lit entrance pathway, premium paving, landscaping on either side. One or two people are entering or leaving naturally — a resident or visitor being welcomed. The atmosphere communicates: organized, secure, premium quality, well-managed. NO technology screens, NO software visible. The entrance itself represents the value of organized society management. Evening lighting or golden afternoon light works best. Bottom 30% smooth dark gradient for text. Top-left clean and dark for logo.",
+  "inputs": [
+    {
+      "key": "offerTitle",
+      "label": "Campaign Headline",
+      "type": "text",
+      "required": true,
+      "placeholder": "e.g. Manage Your Society Digitally",
+      "suggestions": ["Manage Your Society Digitally", "The Gate to Better Society Management", "Security Meets Simplicity", "Modern Societies, Modern Software"]
+    },
+    {
+      "key": "offerDescription",
+      "label": "Supporting Message",
+      "type": "text",
+      "required": true,
+      "placeholder": "e.g. Visitor management, billing, and compliance — all in one",
+      "suggestions": [
+        "Billing, compliance, and community — all in one place",
+        "Trusted by 500+ housing societies",
+        "From gate to accounts — SocietyBee manages it all",
+        "Modern software for better-managed communities"
+      ]
+    },
+    {
+      "key": "cta",
+      "label": "Call to Action",
+      "type": "text",
+      "required": false,
+      "placeholder": "e.g. Book a Free Demo",
+      "suggestions": ["Book a Free Demo", "Get Started", "Learn More", "Talk to Us"]
+    }
+  ]
+}

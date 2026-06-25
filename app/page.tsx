@@ -680,6 +680,28 @@ export default function Home() {
                         </div>
                       </div>
                     )}
+                    {lastBrief.designIntent?.length > 0 && (
+                      <div>
+                        <span className="text-white/30 font-semibold uppercase tracking-wide text-[10px] block mb-1">Design Intent</span>
+                        <div className="flex flex-wrap gap-1">
+                          {lastBrief.designIntent.map((d) => (
+                            <span key={d} className="px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-[10px] text-emerald-400/70">
+                              {d}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {lastBrief.visualHierarchy?.length > 0 && (
+                      <div>
+                        <span className="text-white/30 font-semibold uppercase tracking-wide text-[10px] block mb-1">Visual Hierarchy</span>
+                        <ol className="space-y-0.5">
+                          {lastBrief.visualHierarchy.map((h, i) => (
+                            <li key={i} className="text-[10px] text-white/35">{h}</li>
+                          ))}
+                        </ol>
+                      </div>
+                    )}
                     {lastBrief.visualKeywords?.length > 0 && (
                       <div className="flex flex-wrap gap-1 pt-1">
                         {lastBrief.visualKeywords.map((kw) => (
