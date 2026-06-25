@@ -4,41 +4,15 @@ import path from "path";
 import { loadScene } from "@/lib/scenes";
 import { callCreativeDirector, buildFallbackBrief } from "@/lib/creativeDirector";
 import { buildPromptFromBrief } from "@/lib/promptBuilder";
-// import { generateBackground } from "@/lib/imageAdapter";
-// import { renderPoster } from "@/lib/render";
 import type { BrandConfig, GenerateSceneRequest, PosterSize, VisualStyle } from "@/lib/types";
-// import { SIZE_CONFIGS } from "@/lib/types";
 
 export const runtime = "nodejs";
 export const maxDuration = 120;
 
 const BRAND_PATH = path.join(process.cwd(), "config", "brand.json");
-const ASSETS_DIR = path.join(process.cwd(), "public", "brand");
 
 function loadBrand(): BrandConfig {
   return JSON.parse(fs.readFileSync(BRAND_PATH, "utf-8"));
-}
-
-function fileToDataUrl(filePath: string): string | null {
-  const abs = path.isAbsolute(filePath)
-    ? filePath
-    : path.join(process.cwd(), filePath);
-  if (!fs.existsSync(abs)) return null;
-  const buf = fs.readFileSync(abs);
-  const ext = path.extname(abs).slice(1).toLowerCase();
-  const mime = ext === "jpg" || ext === "jpeg" ? "image/jpeg" : "image/png";
-  return `data:${mime};base64,${buf.toString("base64")}`;
-}
-
-function resolveReferenceImage(
-  brand: BrandConfig,
-  referenceImagePath?: string
-): string | null {
-  if (referenceImagePath) {
-    const url = fileToDataUrl(path.join(ASSETS_DIR, referenceImagePath));
-    if (url) return url;
-  }
-  return fileToDataUrl(brand.logoPath);
 }
 
 export async function POST(req: NextRequest) {
@@ -49,7 +23,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
   }
 
-  const { sceneId, inputs, sizes, visualStyle, referenceImage, referenceStrength } = body;
+  const { sceneId, inputs, sizes, visualStyle } = body;
 
   if (!sceneId) {
     return NextResponse.json({ error: "sceneId is required" }, { status: 400 });
@@ -77,10 +51,7 @@ export async function POST(req: NextRequest) {
   if (visualStyle) brand.visualStyle = visualStyle as VisualStyle;
   const hasLLM = !!process.env.OPENROUTER_API_KEY;
 
-  // referenceImage / referenceStrength kept in body for future use when image gen is re-enabled
-  void resolveReferenceImage; void referenceImage; void referenceStrength;
-
-  // Stage 1: Creative Director → CreativeBrief (one LLM call, shared across all sizes)
+  // Stage 1: Creative Director → CreativeBrief
   const brief = hasLLM
     ? await (async () => {
         try {
@@ -92,7 +63,7 @@ export async function POST(req: NextRequest) {
       })()
     : buildFallbackBrief({ scene, inputs, brand, size: sizes[0] });
 
-  // Stage 2: Prompt Builder → FAL prompt per size (image generation skipped for now)
+  // Stage 2: Prompt Builder → FAL prompt per size (image generation disabled for prompt review)
   const prompts = sizes.map((size: PosterSize) => ({
     size,
     prompt: buildPromptFromBrief(brief, brand, size, (visualStyle as VisualStyle) ?? brand.visualStyle),
@@ -100,45 +71,3 @@ export async function POST(req: NextRequest) {
 
   return NextResponse.json({ brief, prompts });
 }
-
-function buildOverlayContent(
-  sceneId: string,
-  inputs: Record<string, string>,
-  brand: BrandConfig
-) {
-  if (sceneId === "festival-greeting") {
-    return {
-      title: inputs.festival ? `Happy ${inputs.festival}` : brand.name,
-      subtext: inputs.greetingMessage ?? "",
-      cta: undefined,
-      validity: undefined,
-    };
-  }
-
-  if (sceneId === "offer-campaign") {
-    let validity: string | undefined;
-    if (inputs.expiryDate) {
-      validity = `Valid until ${new Date(inputs.expiryDate).toLocaleDateString("en-IN", {
-        day: "numeric", month: "long", year: "numeric",
-      })}`;
-    } else if (inputs.urgency && inputs.urgency !== "None") {
-      validity = inputs.urgency === "Limited Time" ? "Limited Time Offer" : inputs.urgency;
-    }
-    return {
-      title: inputs.offerTitle ?? "",
-      subtext: inputs.offerDescription ?? "",
-      cta: inputs.cta,
-      validity,
-    };
-  }
-
-  return {
-    title: brand.name,
-    subtext: brand.tagline ?? "",
-    cta: undefined,
-    validity: undefined,
-  };
-}
-
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const _buildOverlayContent = buildOverlayContent;
