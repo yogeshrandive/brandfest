@@ -125,6 +125,7 @@ export interface CreativeBrief {
 
 export type CreativeStyle =
   | "realistic"
+  | "lifestyle"
   | "graphical"
   | "abstract-3d"
   | "festival-decor"

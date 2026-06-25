@@ -61,6 +61,49 @@ ${CREATIVITY_SUFFIX}`.trim();
   },
 };
 
+// ─── Style: Indian Lifestyle ──────────────────────────────────────────────────
+
+const lifestyleStyle: StyleDefinition = {
+  id: "lifestyle",
+  label: "Indian Lifestyle",
+  icon: "👨‍👩‍👧",
+  description: "Candid Indian families and community moments — warm, authentic, joyful",
+  model: "fal-ai/flux-pro/v1.1-ultra",
+  negativeAdditions: ["illustration", "3D render", "flat design", "cartoon", "stock photo poses"],
+  buildPrompt(recipe, size) {
+    const sizeNote = size === "story" ? "Vertical 9:16 portrait format." : "Square 1:1 format.";
+    const negatives = [
+      "any text", "letters", "words", "watermarks", "logos", "readable signage",
+      "UI overlays", "dashboards", "hex codes",
+      "more than four people in primary foreground", "overly crowded scenes",
+      "direct camera stares", "staged studio poses", "exaggerated expressions",
+      "extra fingers", "distorted anatomy", "blurry faces", "malformed hands",
+      "cropped heads at frame edges", "floating objects",
+      ...this.negativeAdditions, ...(recipe.negativeExtra ?? []),
+    ];
+
+    return `Warm candid Indian lifestyle photography featuring real families and community members. ${sizeNote} Authentic documentary-style moments of joy, togetherness, and celebration.
+
+${recipe.environment}. ${recipe.businessCues.length ? `Scene details: ${recipe.businessCues.join(", ")}.` : ""}
+
+${recipe.subject}. Indian families — couples, children, elders — in natural candid interaction. Genuine laughter, warm embraces, shared moments. Two to four people in foreground, additional community members softly visible in mid and background. Traditional and contemporary Indian attire mixed naturally.
+
+${recipe.camera}. ${recipe.lighting}. Warm skin tones, natural expressions, authentic body language — never posed.
+
+${recipe.composition} Upper-left corner naturally uncluttered — open sky, soft bokeh, or smooth wall — no faces or objects. Lower portion fades naturally to a smooth dark gradient through depth of field.
+
+Rich warm tones: honey-gold afternoon light, saffron festival colors, deep jewel-tone clothing. Abundant natural greenery. Apartment society backdrop soft in background — residential towers, landscaped garden, community courtyard.
+
+Atmosphere: ${recipe.mood}. Community spirit, warmth, celebration. Premium documentary photography. No visible text or branding.
+
+Avoid: ${negatives.join(", ")}.
+
+Photorealistic. High dynamic range. Premium Indian lifestyle editorial. Warm color grading. Rich human texture.
+
+${CREATIVITY_SUFFIX}`.trim();
+  },
+};
+
 // ─── Style: Graphical ─────────────────────────────────────────────────────────
 
 const graphicalStyle: StyleDefinition = {
@@ -215,6 +258,7 @@ ${CREATIVITY_SUFFIX}`.trim();
 
 export const STYLE_DEFINITIONS: Record<CreativeStyle, StyleDefinition> = {
   "realistic": realisticStyle,
+  "lifestyle": lifestyleStyle,
   "graphical": graphicalStyle,
   "abstract-3d": abstract3dStyle,
   "festival-decor": festivalDecorStyle,
@@ -223,9 +267,9 @@ export const STYLE_DEFINITIONS: Record<CreativeStyle, StyleDefinition> = {
 
 // Default style per scene category
 export const SCENE_DEFAULT_STYLE: Record<string, CreativeStyle> = {
-  "festival-greeting": "realistic",
-  "society-garden": "realistic",
-  "clubhouse": "realistic",
+  "festival-greeting": "lifestyle",
+  "society-garden": "lifestyle",
+  "clubhouse": "lifestyle",
   "offer-campaign": "graphical",
   "society-office": "realistic",
   "apartment-lobby": "architectural",
