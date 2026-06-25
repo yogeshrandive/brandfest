@@ -75,12 +75,22 @@ export async function renderLogoAndFooter(
   const secondary = brand.colors.secondary;
   const accent = brand.colors.accent;
 
-  const logoW = size === "square" ? 280 : 300;
-  const logoH = size === "square" ? 70 : 76;
-  const headlineSize = size === "square" ? 52 : 58;
-  const subtextSize = size === "square" ? 28 : 32;
+  // Logo — bigger, consistent sizing
+  const logoW = size === "square" ? 320 : 340;
+  const logoH = size === "square" ? 80 : 86;
+
+  // Font sizes
+  const headlineSize = size === "square" ? 52 : 60;
+  const subtextSize = size === "square" ? 28 : 33;
   const ctaSize = size === "square" ? 24 : 28;
   const contactSize = size === "square" ? 22 : 24;
+
+  // Footer height and text bottom anchor — text block sits directly above footer
+  const footerH = zones.contact.height;
+  const textPad = size === "square" ? 36 : 48;       // gap between text bottom and footer top
+  const textBottom = footerH + textPad;               // distance from image bottom edge
+  const textLeft = size === "square" ? 56 : 64;
+  const textRight = size === "square" ? 56 : 64;
 
   const scrimTopPct = (zones.scrim.top / height) * 100;
 
@@ -99,42 +109,50 @@ export async function renderLogoAndFooter(
           props: {
             style: {
               position: "absolute", top: 0, left: 0, width, height,
-              background: `linear-gradient(to bottom, transparent ${scrimTopPct - 8}%, ${hexToRgba(secondary, 0.82)} ${scrimTopPct + 10}%, ${hexToRgba(secondary, 0.95)} 100%)`,
+              background: `linear-gradient(to bottom, transparent ${scrimTopPct - 10}%, ${hexToRgba(secondary, 0.85)} ${scrimTopPct + 8}%, #000000 100%)`,
             },
           },
         },
 
-        // Logo — top-left
+        // Logo — top-left, larger
         logoBase64
           ? { type: "img", props: { src: logoBase64, style: { position: "absolute", top: zones.logo.top, left: 40, width: logoW, height: logoH, objectFit: "contain", objectPosition: "left center" } } }
-          : { type: "div", props: { style: { position: "absolute", top: zones.logo.top, left: 40, backgroundColor: primary, borderRadius: 8, padding: "10px 20px", display: "flex", alignItems: "center" }, children: [{ type: "span", props: { style: { color: "#fff", fontWeight: 700, fontSize: 22 }, children: brand.name } }] } },
+          : { type: "div", props: { style: { position: "absolute", top: zones.logo.top, left: 40, backgroundColor: primary, borderRadius: 8, padding: "10px 20px", display: "flex", alignItems: "center" }, children: [{ type: "span", props: { style: { color: "#fff", fontWeight: 700, fontSize: 24 }, children: brand.name } }] } },
 
-        // Text zone — headline + subtext + cta
+        // Text zone — anchored to BOTTOM (just above footer), no floating gap
         {
           type: "div",
           props: {
-            style: { position: "absolute", top: zones.headline.top, left: zones.headline.left, right: zones.headline.right, display: "flex", flexDirection: "column", gap: 12 },
+            style: {
+              position: "absolute",
+              bottom: textBottom,
+              left: textLeft,
+              right: textRight,
+              display: "flex",
+              flexDirection: "column",
+              gap: 14,
+            },
             children: [
-              { type: "div", props: { style: { color: accent, fontSize: headlineSize, fontWeight: 700, lineHeight: 1.15, textShadow: `0 2px 8px ${hexToRgba(secondary, 0.6)}` }, children: content.headline } },
-              { type: "div", props: { style: { width: 80, height: 4, backgroundColor: primary, borderRadius: 2, marginTop: 4 } } },
-              ...(content.subtext ? [{ type: "div", props: { style: { color: hexToRgba(accent, 0.9), fontSize: subtextSize, fontWeight: 400, lineHeight: 1.4 }, children: content.subtext } }] : []),
-              ...(content.fromName ? [{ type: "div", props: { style: { color: hexToRgba(accent, 0.75), fontSize: subtextSize - 4, fontWeight: 400 }, children: `From: ${content.fromName}` } }] : []),
+              { type: "div", props: { style: { color: accent, fontSize: headlineSize, fontWeight: 700, lineHeight: 1.18, textShadow: `0 2px 12px ${hexToRgba(secondary, 0.8)}` }, children: content.headline } },
+              { type: "div", props: { style: { width: 72, height: 4, backgroundColor: primary, borderRadius: 2 } } },
+              ...(content.subtext ? [{ type: "div", props: { style: { color: hexToRgba(accent, 0.88), fontSize: subtextSize, fontWeight: 400, lineHeight: 1.4 }, children: content.subtext } }] : []),
+              ...(content.fromName ? [{ type: "div", props: { style: { color: hexToRgba(accent, 0.70), fontSize: subtextSize - 5, fontWeight: 400, marginTop: 2 }, children: `From: ${content.fromName}` } }] : []),
               ...(content.cta ? [{
                 type: "div", props: {
-                  style: { display: "flex", marginTop: 8 },
-                  children: [{ type: "div", props: { style: { backgroundColor: primary, color: secondary, fontSize: ctaSize, fontWeight: 700, padding: "10px 28px", borderRadius: 8 }, children: content.cta } }],
+                  style: { display: "flex", marginTop: 6 },
+                  children: [{ type: "div", props: { style: { backgroundColor: primary, color: secondary, fontSize: ctaSize, fontWeight: 700, padding: "12px 32px", borderRadius: 8 }, children: content.cta } }],
                 },
               }] : []),
-              ...(content.validity ? [{ type: "div", props: { style: { color: hexToRgba(primary, 0.85), fontSize: ctaSize - 4, marginTop: 4 }, children: content.validity } }] : []),
+              ...(content.validity ? [{ type: "div", props: { style: { color: hexToRgba(primary, 0.82), fontSize: ctaSize - 4 }, children: content.validity } }] : []),
             ],
           },
         },
 
-        // Contact footer — bottom strip
+        // Contact footer — solid dark strip flush at bottom
         {
           type: "div",
           props: {
-            style: { position: "absolute", bottom: 0, left: 0, right: 0, height: zones.contact.height, backgroundColor: hexToRgba("#000000", 0.70), borderTop: `2px solid ${hexToRgba(primary, 0.4)}`, display: "flex", alignItems: "center", justifyContent: "center", gap: 28, paddingLeft: 40, paddingRight: 40 },
+            style: { position: "absolute", bottom: 0, left: 0, right: 0, height: footerH, backgroundColor: "#000000", borderTop: `2px solid ${hexToRgba(primary, 0.5)}`, display: "flex", alignItems: "center", justifyContent: "center", gap: 28, paddingLeft: 40, paddingRight: 40 },
             children: [
               { type: "div", props: { style: { color: accent, fontSize: contactSize, fontWeight: 400 }, children: brand.contact.phone } },
               { type: "div", props: { style: { color: hexToRgba(accent, 0.45), fontSize: contactSize }, children: "•" } },
