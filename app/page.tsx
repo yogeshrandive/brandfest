@@ -193,6 +193,7 @@ export default function Home() {
   const [sizes, setSizes] = useState<PosterSize[]>(["square"]);
   const [visualStyle, setVisualStyle] = useState<VisualStyle>("luxury-dark");
   const [loading, setLoading] = useState(false);
+  const [imageLoading, setImageLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [posters, setPosters] = useState<GeneratedPoster[]>([]);
   const [prompts, setPrompts] = useState<{ size: PosterSize; prompt: string }[]>([]);
@@ -278,33 +279,62 @@ export default function Home() {
     }
 
     setLoading(true);
+    setImageLoading(false);
     setError(null);
     setPosters([]);
     setPrompts([]);
     setLastBrief(null);
 
     try {
+      // Stage 1+2: Get creative brief + prompts (fast, ~10–15s)
       const res = await fetch("/api/generate-scene", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          sceneId: selectedSceneId,
-          inputs: sceneInputs,
-          sizes,
-          visualStyle,
-          referenceImage: selectedReference ?? undefined,
-          referenceStrength,
-        }),
+        body: JSON.stringify({ sceneId: selectedSceneId, inputs: sceneInputs, sizes, visualStyle }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Generation failed");
-      if (data.brief) setLastBrief(data.brief);
-      if (data.prompts) setPrompts(data.prompts);
-      if (data.posters) setPosters(data.posters);
+
+      const brief = data.brief ?? null;
+      const generatedPrompts: { size: PosterSize; prompt: string }[] = data.prompts ?? [];
+      if (brief) setLastBrief(brief);
+      if (generatedPrompts.length) setPrompts(generatedPrompts);
+
+      // Stage 3+4: Generate images per size in parallel (slow, ~30–60s each)
+      if (generatedPrompts.length > 0 && process.env.NEXT_PUBLIC_IMAGE_ENABLED !== "false") {
+        setLoading(false);
+        setImageLoading(true);
+        await Promise.all(
+          generatedPrompts.map(async ({ size, prompt }) => {
+            try {
+              const imgRes = await fetch("/api/generate-image", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  prompt,
+                  size,
+                  sceneId: selectedSceneId,
+                  inputs: sceneInputs,
+                  brief,
+                  referenceImage: selectedReference ?? undefined,
+                  referenceStrength,
+                }),
+              });
+              const imgData = await imgRes.json();
+              if (imgRes.ok && imgData.poster) {
+                setPosters((prev) => [...prev, imgData.poster]);
+              }
+            } catch (imgErr) {
+              console.error(`[generate-image] ${size} failed:`, imgErr);
+            }
+          })
+        );
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Generation failed");
     } finally {
       setLoading(false);
+      setImageLoading(false);
     }
   }
 
@@ -573,10 +603,10 @@ export default function Home() {
             {/* Generate */}
             <button
               onClick={generate}
-              disabled={loading || !selectedScene}
+              disabled={loading || imageLoading || !selectedScene}
               className="w-full py-3.5 bg-[#F5B301] text-[#1A1A2E] font-bold text-base rounded-lg hover:bg-[#F5B301]/90 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
             >
-              {loading ? "Generating…" : "Generate Creative"}
+              {loading ? "Building Brief…" : imageLoading ? "Generating Images…" : "Generate Creative"}
             </button>
 
             {error && (
@@ -588,14 +618,16 @@ export default function Home() {
 
           {/* Right — preview */}
           <section>
-            {loading && (
+            {(loading || imageLoading) && (
               <div className="flex flex-col items-center justify-center h-80 gap-4">
                 <div className="w-12 h-12 border-4 border-[#F5B301] border-t-transparent rounded-full animate-spin" />
-                <p className="text-white/50 text-sm">AI is crafting your creative… (~15–30s)</p>
+                <p className="text-white/50 text-sm">
+                  {loading ? "Creative Director is thinking… (~10–15s)" : `Generating image${sizes.length > 1 ? "s" : ""}… (~30–60s)`}
+                </p>
               </div>
             )}
 
-            {!loading && posters.length === 0 && prompts.length === 0 && !error && (
+            {!loading && !imageLoading && posters.length === 0 && prompts.length === 0 && !error && (
               <div className="flex flex-col items-center justify-center h-80 gap-3 border border-dashed border-white/10 rounded-2xl">
                 <div className="text-4xl opacity-30">🖼</div>
                 <p className="text-white/30 text-sm">Your creative brief will appear here</p>
