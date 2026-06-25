@@ -316,6 +316,7 @@ export default function Home() {
                   sceneId: selectedSceneId,
                   inputs: sceneInputs,
                   brief,
+                  visualStyle,
                   referenceImage: selectedReference ?? undefined,
                   referenceStrength,
                 }),

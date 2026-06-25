@@ -2,10 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import fs from "fs";
 import path from "path";
 import { generateBackground } from "@/lib/imageAdapter";
-import { renderPoster } from "@/lib/render";
-import type { BrandConfig, PosterSize, CreativeBrief } from "@/lib/types";
+import { buildPromptFromBrief } from "@/lib/promptBuilder";
+import type { TextOverlayContent } from "@/lib/promptBuilder";
+import type { BrandConfig, PosterSize, CreativeBrief, VisualStyle } from "@/lib/types";
 import { SIZE_CONFIGS } from "@/lib/types";
-import type { OverlayContent } from "@/lib/render";
 
 export const runtime = "nodejs";
 export const maxDuration = 300;
@@ -31,15 +31,22 @@ function resolveReferenceImage(filename: string | undefined): string | undefined
   return fileToDataUrl(filePath);
 }
 
-function buildOverlayContent(inputs: Record<string, string>, brand: BrandConfig): OverlayContent {
+function findLogoFile(): string | undefined {
+  if (!fs.existsSync(ASSETS_DIR)) return undefined;
+  const files = fs.readdirSync(ASSETS_DIR);
+  const logo = files.find((f) => /logo/i.test(f) && /\.(png|jpg|jpeg|svg|webp)$/i.test(f));
+  return logo ? path.join(ASSETS_DIR, logo) : undefined;
+}
+
+function buildTextContent(inputs: Record<string, string>, brand: BrandConfig): TextOverlayContent {
   if (inputs.greetingMessage || inputs.festival) {
     return {
-      title: inputs.greetingMessage || `Happy ${inputs.festival}!`,
-      subtext: inputs.fromName || brand.name,
+      headline: inputs.greetingMessage || `Happy ${inputs.festival}!`,
+      fromName: inputs.fromName || brand.name,
     };
   }
   return {
-    title: inputs.offerTitle || "Special Offer",
+    headline: inputs.offerTitle || "Special Offer",
     subtext: inputs.offerDescription || inputs.subtext || brand.tagline,
     cta: inputs.cta || undefined,
     validity: inputs.expiryDate ? `Valid until ${inputs.expiryDate}` : undefined,
@@ -52,6 +59,7 @@ interface GenerateImageRequest {
   sceneId: string;
   inputs: Record<string, string>;
   brief?: CreativeBrief;
+  visualStyle?: string;
   referenceImage?: string;
   referenceStrength?: number;
 }
@@ -64,10 +72,13 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
   }
 
-  const { prompt, size, sceneId, inputs, brief, referenceImage, referenceStrength } = body;
+  const { size, sceneId, inputs, brief, visualStyle, referenceImage, referenceStrength } = body;
 
-  if (!prompt || !size) {
-    return NextResponse.json({ error: "prompt and size are required" }, { status: 400 });
+  if (!size) {
+    return NextResponse.json({ error: "size is required" }, { status: 400 });
+  }
+  if (!brief) {
+    return NextResponse.json({ error: "brief is required" }, { status: 400 });
   }
 
   if (!process.env.FAL_KEY) {
@@ -76,23 +87,40 @@ export async function POST(req: NextRequest) {
 
   const brand = loadBrand();
   const { width, height } = SIZE_CONFIGS[size];
-  const referenceImageUrl = resolveReferenceImage(referenceImage);
-  const overlayContent = buildOverlayContent(inputs, brand);
+
+  // Resolve reference image: explicit selection takes priority, then auto-detect logo
+  const explicitRef = resolveReferenceImage(referenceImage);
+  const logoPath = !explicitRef ? findLogoFile() : undefined;
+  const referenceImageUrl = explicitRef ?? (logoPath ? fileToDataUrl(logoPath) : undefined);
+  const hasLogoReference = !!referenceImageUrl;
+  const effectiveStrength = explicitRef ? (referenceStrength ?? 0.15) : 0.08;
+
+  // Build text overlay content from scene inputs
+  const textContent = buildTextContent(inputs, brand);
+
+  // Rebuild prompt with text+logo sections embedded
+  const finalPrompt = buildPromptFromBrief(
+    brief,
+    brand,
+    size,
+    (visualStyle as VisualStyle) ?? brand.visualStyle,
+    textContent,
+    hasLogoReference
+  );
 
   const { imageBuffer } = await generateBackground({
-    prompt,
+    prompt: finalPrompt,
     width,
     height,
     referenceImageUrl,
-    referenceStrength: referenceStrength ?? 0.15,
+    referenceStrength: effectiveStrength,
   });
 
-  const posterBuffer = await renderPoster(imageBuffer, overlayContent, brand, size);
-  const dataUrl = `data:image/png;base64,${posterBuffer.toString("base64")}`;
+  const dataUrl = `data:image/png;base64,${imageBuffer.toString("base64")}`;
   const today = new Date().toISOString().split("T")[0];
   const filename = `${brand.name.toLowerCase().replace(/\s+/g, "-")}-${sceneId}-${size}-${today}.png`;
 
   return NextResponse.json({
-    poster: { size, dataUrl, filename, brief, prompt },
+    poster: { size, dataUrl, filename, brief, prompt: finalPrompt },
   });
 }

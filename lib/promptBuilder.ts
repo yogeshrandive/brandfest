@@ -109,11 +109,10 @@ Color Directive: ${brief.colorDirective}
 Visual Keywords: ${brief.visualKeywords.join(", ")}`;
 }
 
-function NegativeSection(brief: CreativeBrief): string {
-  const defaults = [
-    "text", "letters", "words", "watermarks", "logos",
-    "UI overlays", "speech bubbles",
-  ];
+function NegativeSection(brief: CreativeBrief, embedText: boolean): string {
+  const defaults = embedText
+    ? ["UI overlays", "speech bubbles", "random unrelated text"]
+    : ["text", "letters", "words", "watermarks", "logos", "UI overlays", "speech bubbles"];
   const combined = [...new Set([...defaults, ...brief.negativeElements])];
 
   return `NEGATIVE
@@ -122,6 +121,44 @@ No stock-photo look. No cartoon or illustration style.
 No distorted anatomy, extra fingers, blurry faces, malformed hands, duplicated people.
 No floating objects, random background elements, exaggerated expressions.
 No cropped heads, no clipping at frame edges.`;
+}
+
+export interface TextOverlayContent {
+  headline: string;
+  subtext?: string;
+  cta?: string;
+  validity?: string;
+  fromName?: string;
+}
+
+function TextAndLogoSection(content: TextOverlayContent, brand: BrandConfig, hasLogoReference: boolean): string {
+  const lines: string[] = [];
+
+  lines.push(`LOGO`);
+  if (hasLogoReference) {
+    lines.push(`A reference logo image is provided. Place it in the top-left corner at approximately 8% of image width.`);
+    lines.push(`Clear ${brand.colors.secondary} or dark background behind the logo. No competing visual element nearby.`);
+  } else {
+    lines.push(`Brand: ${brand.name}. Place a simple "${brand.name}" wordmark in the top-left corner.`);
+    lines.push(`Primary color: ${brand.colors.primary}. Background behind logo must be dark and uncluttered.`);
+  }
+
+  lines.push(``);
+  lines.push(`TEXT TO RENDER IN THE IMAGE`);
+  lines.push(`Use clean, legible sans-serif typography. All text must be sharp and correctly spelled.`);
+  lines.push(``);
+  lines.push(`Headline (large, bold, bottom zone): "${content.headline}"`);
+  if (content.subtext) lines.push(`Subtext (medium, below headline): "${content.subtext}"`);
+  if (content.cta) lines.push(`CTA Button (accent background ${brand.colors.primary}, dark text): "${content.cta}"`);
+  if (content.validity) lines.push(`Validity note (small, below CTA): "${content.validity}"`);
+  if (content.fromName) lines.push(`From (small, near headline): "${content.fromName}"`);
+
+  lines.push(``);
+  lines.push(`Contact Bar (bottom strip, small text):`);
+  lines.push(`"${brand.contact.phone}  •  ${brand.contact.website}  •  ${brand.contact.handle}"`);
+  lines.push(`Text color: ${brand.colors.accent}. Background: semi-transparent dark strip.`);
+
+  return lines.join("\n");
 }
 
 function QualitySection(): string {
@@ -137,9 +174,13 @@ export function buildPromptFromBrief(
   brief: CreativeBrief,
   brand: BrandConfig,
   size: PosterSize,
-  visualStyle: VisualStyle
+  visualStyle: VisualStyle,
+  textContent?: TextOverlayContent,
+  hasLogoReference?: boolean
 ): string {
-  return [
+  const embedText = !!textContent;
+
+  const sections = [
     RoleSection(),
     CampaignGoalSection(brief),
     BrandIdentitySection(brand),
@@ -147,10 +188,17 @@ export function buildPromptFromBrief(
     SubjectSection(brief),
     CompositionSection(brief, size),
     CameraSection(brief),
-    BrandPlacementSection(brief),
     LightingSection(brief),
     StyleSection(brief, visualStyle),
-    NegativeSection(brief),
+    NegativeSection(brief, embedText),
     QualitySection(),
-  ].join("\n\n");
+  ];
+
+  if (embedText && textContent) {
+    sections.push(TextAndLogoSection(textContent, brand, hasLogoReference ?? false));
+  } else {
+    sections.splice(7, 0, BrandPlacementSection(brief));
+  }
+
+  return sections.join("\n\n");
 }
