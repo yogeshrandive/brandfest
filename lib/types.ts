@@ -67,6 +67,13 @@ export interface BrandConfig {
   brandSummary?: string;
   visualDirection?: string;
   industryVisualKeywords?: string[];
+  brandVisualDNA?: {
+    colorNames: { primary: string; secondary: string };
+    patterns: string[];
+    settings: string[];
+    people: string[];
+    products: string[];
+  };
 }
 
 export interface Occasion {
@@ -85,6 +92,27 @@ export interface OfferInput {
   validity?: string;
   promptHints: string;
   theme: "promo";
+}
+
+// Creative Brief — structured output from the Creative Director LLM call
+export interface ReservedArea {
+  position: "left" | "right" | "top" | "bottom" | "top-left" | "top-right" | "bottom-left" | "bottom-right" | "center";
+  percentage: number;
+  purpose: string;
+}
+
+export interface CreativeBrief {
+  goal: string;
+  mood: string;
+  scene: string;
+  subject: string;
+  lighting: string;
+  composition: string;
+  reservedAreas: ReservedArea[];
+  backgroundStyle: string;
+  visualKeywords: string[];
+  colorDirective: string;
+  negativeElements: string[];
 }
 
 // Scene system
@@ -111,6 +139,9 @@ export interface SceneDefinition {
   category: SceneCategory;
   description: string;
   inputs: SceneInputDef[];
+  // Creative Director guidance — shapes the brief, not the prompt
+  visualTheme: string;
+  briefInstructions: string;
 }
 
 export type SceneInputValues = Record<string, string>;
@@ -149,6 +180,8 @@ export interface GeneratedPoster {
   size: PosterSize;
   dataUrl: string;
   filename: string;
+  brief?: CreativeBrief;
+  prompt?: string;
 }
 
 export interface GenerateResponse {

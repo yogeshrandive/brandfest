@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import fs from "fs";
 import path from "path";
 import { loadScene } from "@/lib/scenes";
-import { buildScenePrompt, buildFallbackPrompt } from "@/lib/promptEngine";
+import { callCreativeDirector, buildFallbackBrief } from "@/lib/creativeDirector";
+import { buildPromptFromBrief } from "@/lib/promptBuilder";
 import { generateBackground } from "@/lib/imageAdapter";
 import { renderPoster } from "@/lib/render";
 import type { BrandConfig, GenerateSceneRequest, PosterSize, VisualStyle } from "@/lib/types";
@@ -29,7 +30,6 @@ function fileToDataUrl(filePath: string): string | null {
   return `data:${mime};base64,${buf.toString("base64")}`;
 }
 
-// Pick the best reference image: explicit reference > logo
 function resolveReferenceImage(
   brand: BrandConfig,
   referenceImagePath?: string
@@ -38,7 +38,6 @@ function resolveReferenceImage(
     const url = fileToDataUrl(path.join(ASSETS_DIR, referenceImagePath));
     if (url) return url;
   }
-  // Fall back to logo
   return fileToDataUrl(brand.logoPath);
 }
 
@@ -82,17 +81,30 @@ export async function POST(req: NextRequest) {
   const referenceImageUrl = resolveReferenceImage(brand, referenceImage) ?? undefined;
   const overlayContent = buildOverlayContent(sceneId, inputs, brand);
 
+  // Stage 1: Creative Director → CreativeBrief (one LLM call, shared across all sizes)
+  const brief = hasLLM
+    ? await (async () => {
+        try {
+          return await callCreativeDirector({ scene, inputs, brand, size: sizes[0], visualStyle });
+        } catch (err) {
+          console.error("[creative-director] LLM failed, using fallback:", err);
+          return buildFallbackBrief({ scene, inputs, brand, size: sizes[0] });
+        }
+      })()
+    : buildFallbackBrief({ scene, inputs, brand, size: sizes[0] });
+
   try {
     const posters = await Promise.all(
       sizes.map(async (size: PosterSize) => {
         const { width, height } = SIZE_CONFIGS[size];
 
-        let imagePrompt: string;
-        if (hasLLM) {
-          imagePrompt = await buildScenePrompt({ scene, inputs, brand, size, visualStyle });
-        } else {
-          imagePrompt = buildFallbackPrompt(inputs, brand, size, visualStyle);
-        }
+        // Stage 2: Prompt Builder → FAL prompt (deterministic, per size)
+        const imagePrompt = buildPromptFromBrief(
+          brief,
+          brand,
+          size,
+          (visualStyle as VisualStyle) ?? brand.visualStyle
+        );
 
         const { imageBuffer } = await generateBackground({
           prompt: imagePrompt,
@@ -106,7 +118,7 @@ export async function POST(req: NextRequest) {
         const filename = `${brand.name.toLowerCase().replace(/\s+/g, "-")}-${sceneId}-${size}-${today}.png`;
         const dataUrl = `data:image/png;base64,${pngBuffer.toString("base64")}`;
 
-        return { size, dataUrl, filename, prompt: hasLLM ? imagePrompt : undefined };
+        return { size, dataUrl, filename, brief, prompt: imagePrompt };
       })
     );
 
