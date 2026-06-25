@@ -616,6 +616,8 @@ export default function Home() {
                         { label: "Subject", value: lastBrief.subject },
                         { label: "Lighting", value: lastBrief.lighting },
                         { label: "Composition", value: lastBrief.composition },
+                        ...(lastBrief.cameraDirection ? [{ label: "Camera", value: lastBrief.cameraDirection }] : []),
+                        ...(lastBrief.typographySafeZone ? [{ label: "Type Safe Zone", value: lastBrief.typographySafeZone }] : []),
                       ].map(({ label, value }) => (
                         <div key={label} className="col-span-2 sm:col-span-1">
                           <span className="text-white/30 font-semibold uppercase tracking-wide text-[10px]">{label}</span>
@@ -623,6 +625,30 @@ export default function Home() {
                         </div>
                       ))}
                     </div>
+                    {lastBrief.emotions?.length > 0 && (
+                      <div>
+                        <span className="text-white/30 font-semibold uppercase tracking-wide text-[10px] block mb-1">Emotions</span>
+                        <div className="flex flex-wrap gap-1">
+                          {lastBrief.emotions.map((e) => (
+                            <span key={e} className="px-2 py-0.5 rounded-full bg-[#F5B301]/10 border border-[#F5B301]/20 text-[10px] text-[#F5B301]/70">
+                              {e}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {lastBrief.businessRelevanceCues?.length > 0 && (
+                      <div>
+                        <span className="text-white/30 font-semibold uppercase tracking-wide text-[10px] block mb-1">Business Visual Cues</span>
+                        <div className="flex flex-wrap gap-1">
+                          {lastBrief.businessRelevanceCues.map((c) => (
+                            <span key={c} className="px-2 py-0.5 rounded-full bg-white/5 border border-white/10 text-[10px] text-white/40">
+                              {c}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                     {lastBrief.visualKeywords?.length > 0 && (
                       <div className="flex flex-wrap gap-1 pt-1">
                         {lastBrief.visualKeywords.map((kw) => (
