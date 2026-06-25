@@ -3,10 +3,11 @@ import fs from "fs";
 import path from "path";
 import { generateBackground } from "@/lib/imageAdapter";
 import { renderLogoAndFooter } from "@/lib/render";
-import { buildRecipeFromBrief, buildPromptFromRecipe } from "@/lib/promptBuilder";
+import { buildRecipeFromBrief, buildPromptFromRecipe, getModelForStyle } from "@/lib/promptBuilder";
 import type { TextOverlayContent } from "@/lib/promptBuilder";
-import type { BrandConfig, PosterSize, CreativeBrief } from "@/lib/types";
+import type { BrandConfig, PosterSize, CreativeBrief, CreativeStyle } from "@/lib/types";
 import { SIZE_CONFIGS } from "@/lib/types";
+import { getDefaultStyle } from "@/lib/styles";
 
 export const runtime = "nodejs";
 export const maxDuration = 300;
@@ -26,12 +27,10 @@ function fileToDataUrl(filePath: string): string {
 }
 
 function resolveLogoDataUrl(selectedFilename: string | undefined, fallbackPath: string): string | null {
-  // Use UI-selected asset first
   if (selectedFilename) {
     const p = path.join(ASSETS_DIR, selectedFilename);
     if (fs.existsSync(p)) return fileToDataUrl(p);
   }
-  // Fall back to brand.logoPath
   const abs = path.join(process.cwd(), fallbackPath);
   if (fs.existsSync(abs)) return fileToDataUrl(abs);
   return null;
@@ -57,6 +56,7 @@ interface GenerateImageRequest {
   sceneId: string;
   inputs: Record<string, string>;
   brief?: CreativeBrief;
+  creativeStyle?: CreativeStyle;
   selectedLogo?: string;
 }
 
@@ -68,7 +68,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
   }
 
-  const { size, sceneId, inputs, brief, selectedLogo } = body;
+  const { size, sceneId, inputs, brief, creativeStyle, selectedLogo } = body;
 
   if (!size) return NextResponse.json({ error: "size is required" }, { status: 400 });
   if (!brief) return NextResponse.json({ error: "brief is required" }, { status: 400 });
@@ -77,24 +77,25 @@ export async function POST(req: NextRequest) {
   const brand = loadBrand();
   const { width, height } = SIZE_CONFIGS[size];
 
-  // Stage 1: Build recipe + FAL prompt — each call gets a unique seed for variation
+  const effectiveStyle: CreativeStyle = creativeStyle ?? getDefaultStyle(sceneId);
   const seed = sceneId + size + Date.now().toString(36);
   const recipe = buildRecipeFromBrief(brief, brand, sceneId, size, seed);
-  const finalPrompt = buildPromptFromRecipe(recipe, size);
+  const finalPrompt = buildPromptFromRecipe(recipe, size, effectiveStyle);
+  const model = getModelForStyle(effectiveStyle);
 
-  // Stage 2: FAL generates the background scene
-  const { imageBuffer } = await generateBackground({ prompt: finalPrompt, width, height });
+  // Stage 1: FAL generates background scene using style-selected model
+  const { imageBuffer } = await generateBackground({ prompt: finalPrompt, width, height, model });
 
-  // Stage 3: Satori composites logo (top-left) + text + contact footer over FAL image
+  // Stage 2: Satori composites logo (top-left) + text + contact footer
   const textContent = buildTextContent(inputs, brand);
   const logoDataUrl = resolveLogoDataUrl(selectedLogo, brand.logoPath);
   const posterBuffer = await renderLogoAndFooter(imageBuffer, textContent, logoDataUrl, brand, size);
 
   const dataUrl = `data:image/png;base64,${posterBuffer.toString("base64")}`;
   const today = new Date().toISOString().split("T")[0];
-  const filename = `${brand.name.toLowerCase().replace(/\s+/g, "-")}-${sceneId}-${size}-${today}.png`;
+  const filename = `${brand.name.toLowerCase().replace(/\s+/g, "-")}-${sceneId}-${effectiveStyle}-${size}-${today}.png`;
 
   return NextResponse.json({
-    poster: { size, dataUrl, filename, brief, prompt: finalPrompt },
+    poster: { size, dataUrl, filename, brief, prompt: finalPrompt, creativeStyle: effectiveStyle },
   });
 }

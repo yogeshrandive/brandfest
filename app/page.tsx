@@ -9,7 +9,9 @@ import type {
   SceneDefinition,
   SceneInputValues,
   CreativeBrief,
+  CreativeStyle,
 } from "@/lib/types";
+import { STYLE_DEFINITIONS, getDefaultStyle } from "@/lib/styles";
 
 interface BrandAsset {
   filename: string;
@@ -192,6 +194,7 @@ export default function Home() {
   const [sceneInputs, setSceneInputs] = useState<SceneInputValues>({});
   const [sizes, setSizes] = useState<PosterSize[]>(["square"]);
   const [visualStyle, setVisualStyle] = useState<VisualStyle>("luxury-dark");
+  const [creativeStyle, setCreativeStyle] = useState<CreativeStyle>("realistic");
   const [loading, setLoading] = useState(false);
   const [imageLoading, setImageLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -254,6 +257,7 @@ export default function Home() {
       if (i.default) defaults[i.key] = i.default;
     });
     setSceneInputs(defaults);
+    setCreativeStyle(getDefaultStyle(selectedSceneId));
     setPosters([]);
     setPrompts([]);
     setLastBrief(null);
@@ -315,6 +319,7 @@ export default function Home() {
                   sceneId: selectedSceneId,
                   inputs: sceneInputs,
                   brief,
+                  creativeStyle,
                   selectedLogo: selectedReference ?? undefined,
                 }),
               });
@@ -494,6 +499,38 @@ export default function Home() {
                 ))}
               </div>
             )}
+
+            {/* Creative Style */}
+            <div>
+              <label className="text-xs uppercase tracking-widest text-white/40 mb-3 block">
+                Creative Style
+              </label>
+              <div className="flex flex-wrap gap-2">
+                {(Object.values(STYLE_DEFINITIONS) as typeof STYLE_DEFINITIONS[CreativeStyle][]).map((styleDef) => {
+                  const active = creativeStyle === styleDef.id;
+                  return (
+                    <button
+                      key={styleDef.id}
+                      onClick={() => setCreativeStyle(styleDef.id)}
+                      title={styleDef.description}
+                      className={`px-3 py-2 rounded-xl border text-left transition-all ${
+                        active
+                          ? "border-[#F5B301]/60 bg-[#F5B301]/10"
+                          : "border-white/10 bg-white/5 hover:border-white/20"
+                      }`}
+                    >
+                      <span className="mr-1.5">{styleDef.icon}</span>
+                      <span className={`text-sm font-semibold ${active ? "text-[#F5B301]" : "text-white/80"}`}>
+                        {styleDef.label}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+              {STYLE_DEFINITIONS[creativeStyle] && (
+                <p className="text-xs text-white/30 mt-2">{STYLE_DEFINITIONS[creativeStyle].description}</p>
+              )}
+            </div>
 
             {/* Reference image */}
             {assets.length > 0 && (
