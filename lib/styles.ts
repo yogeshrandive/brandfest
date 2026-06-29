@@ -196,19 +196,19 @@ const festivalDecorStyle: StyleDefinition = {
       ...this.negativeAdditions, ...(recipe.negativeExtra ?? []),
     ];
 
-    return `Premium festival decorative photography. ${sizeNote} No people or human figures — pure atmosphere and decoration.
+    return `Decorative festive greeting-card design. ${sizeNote} No people or human figures — the decoration itself is the hero.
 
-Rich festival arrangement on stone or marble surface: earthen clay diyas with warm amber flame, fresh marigold garlands and loose petals, intricate colorful rangoli pattern, brass oil lamp, scattered rose petals, warm string fairy lights in soft background bokeh. Residential society courtyard or entrance steps as setting — apartment towers dimly visible in deep background.
+A beautifully composed overhead flat-lay arrangement of festive decorative elements for this occasion: ${recipe.environment}. ${recipe.businessCues.length ? `Include: ${recipe.businessCues.join(", ")}.` : ""} Elements such as glowing lamps, flowers and petals, ornamental motifs, garlands and small sparkling accents, clustered elegantly toward the corners and one side.
 
-${recipe.lighting}. Rich warm amber, gold, and saffron tones. Deep moody background with warm glow from diyas and string lights. Premium macro and lifestyle composition.
+${recipe.subject}.
 
-${recipe.composition} Upper-left area of the frame deliberately clean with darker, cooler tones — free of decorative elements. Lower portion smoothly darker, minimal detail.
+${recipe.lighting}. Rich saturated festive colors, warm glow, jewel tones. Premium decorative greeting-card aesthetic with depth and subtle texture.
 
-Warm honey-gold as the dominant atmospheric tone. Deep navy in background shadows. Rich jewel-toned festival colors: saffron, marigold orange, vermilion, deep red.
+Composition is essential: keep a LARGE smooth clean area (roughly the center and the lower portion) completely free of decorative elements — an open, uncluttered, evenly-toned space reserved for a greeting message. Decorations frame the edges and one corner only. The very top corner stays clean for a small logo.
 
 Avoid: ${negatives.join(", ")}.
 
-Photorealistic. High dynamic range. Premium lifestyle photography. Rich material textures. Luxury editorial quality.
+High quality, richly colored, balanced and elegant. Premium festival greeting design.
 
 ${CREATIVITY_SUFFIX}`.trim();
   },

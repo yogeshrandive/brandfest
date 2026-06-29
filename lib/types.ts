@@ -162,8 +162,8 @@ export interface Industry {
 // The two reusable content moments (replace the 8 society scenes)
 export type ContentMoment = "greeting" | "offer";
 
-// User-facing image styles (exactly two to start)
-export type ImageStyle = "vector" | "real-human";
+// User-facing image styles
+export type ImageStyle = "vector" | "real-human" | "festive-decor";
 
 export type CreativeStyle =
   | "realistic"

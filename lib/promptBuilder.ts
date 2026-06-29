@@ -23,6 +23,7 @@ export interface TextOverlayContent {
 export const IMAGE_STYLE_TO_CREATIVE: Record<ImageStyle, CreativeStyle> = {
   "real-human": "lifestyle",
   "vector": "graphical",
+  "festive-decor": "festival-decor",
 };
 
 export function getModelForImageStyle(imageStyle: ImageStyle): string {

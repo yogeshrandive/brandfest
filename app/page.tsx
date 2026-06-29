@@ -29,6 +29,7 @@ const SIZE_LABELS: Record<PosterSize, string> = {
 const IMAGE_STYLES: { id: ImageStyle; label: string; icon: string; desc: string }[] = [
   { id: "real-human", label: "Real Human", icon: "📸", desc: "Photographic, real people & places" },
   { id: "vector", label: "Vector", icon: "🎨", desc: "Flat illustration, shapes & motifs" },
+  { id: "festive-decor", label: "Festive Decor", icon: "🪔", desc: "Decorative greeting card — lamps, flowers, motifs" },
 ];
 
 type ActiveTab = "create" | "brand" | "models";

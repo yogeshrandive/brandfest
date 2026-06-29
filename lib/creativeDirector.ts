@@ -20,7 +20,7 @@ Critical rules:
 - You MUST reserve clean empty space for them: a smooth area for the logo, and a smooth darker area for the headline/CTA. Plan where these go and describe it precisely.
 - Use VISUAL NOUNS, not stories. scene = environment/materials/atmosphere. subject = camera focus (what/who, position, natural action).
 - Make it SPECIFIC to this business type using the provided scene material (environments, props). Avoid generic stock clichés.
-- For a "real-human" image style: real people and photographic realism are welcome. For a "vector" image style: NO people/photos — use clean flat illustration, geometric shapes, and the provided motifs; describe an illustrative composition instead.
+- For a "real-human" image style: real people and photographic realism are welcome. For a "vector" image style: NO people/photos — use clean flat illustration, geometric shapes, and the provided motifs. For a "festive-decor" image style: NO people — design a decorative greeting card; describe an arrangement of occasion-specific decorative motifs (lamps, flowers, petals, ornaments, sparkles) framing the edges/corners while keeping a large clean central area open for the message. Set scene/subject to describe these decorations, not a room.
 - logoSpec: choose a corner that stays visually clean; widthPct is logo width as % of image width (use 22-30).
 - typographySafeZone: an area with no faces/bright detail that supports white type.
 
@@ -103,7 +103,13 @@ Type: ${moment === "greeting" ? "Greeting / festive wish" : "Offer / promotion"}
 ${campaignBlock || "(no specific details — invent a fitting idea)"}
 
 IMAGE STYLE
-${imageStyle === "vector" ? "vector — flat illustration, no people, no photos" : "real-human — photographic realism, real people welcome"}
+${
+  imageStyle === "vector"
+    ? "vector — flat illustration, no people, no photos; clean shapes and motifs"
+    : imageStyle === "festive-decor"
+      ? "festive-decor — a decorative greeting-card design, no people; an arrangement of festive/occasion motifs (lamps, flowers, petals, ornaments, sparkles) framing the edges, with a LARGE clean uncluttered area kept open for the greeting message"
+      : "real-human — photographic realism, real people welcome"
+}
 
 FORMAT & LAYOUT
 ${aspectNote}
