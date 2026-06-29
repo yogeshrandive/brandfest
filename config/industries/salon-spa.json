@@ -1,0 +1,53 @@
+{
+  "id": "salon-spa",
+  "name": "Salon & Spa",
+  "icon": "💇",
+  "description": "Hair salons, beauty parlours, spas and wellness studios",
+  "subcategories": [
+    {
+      "id": "hair-beauty-salon",
+      "name": "Hair & Beauty Salon",
+      "description": "Unisex salon or beauty parlour",
+      "sceneEnvironments": [
+        "Modern salon interior with stylist chairs and large mirrors, warm lighting, clean professional setting",
+        "Close-up of a fresh hairstyle or makeup look, soft flattering light, polished finish",
+        "Styling station with professional tools neatly arranged, bright airy salon background"
+      ],
+      "props": ["styling chair", "scissors and comb", "hair dryer", "makeup brushes", "salon mirror"],
+      "moods": ["fresh", "confident", "polished", "vibrant"],
+      "greetingExamples": ["Look your festive best with us", "Wishing you a season of glow and confidence"],
+      "offerExamples": ["Festive Glam Package — 30% off", "Haircut + Spa combo at a special price"],
+      "vectorMotifs": ["scissors emblem", "comb icon", "lipstick line-art", "blow-dryer badge"]
+    },
+    {
+      "id": "spa-wellness",
+      "name": "Spa & Wellness",
+      "description": "Day spa, massage and wellness studio",
+      "sceneEnvironments": [
+        "Serene spa room with candles, rolled towels and orchids, soft diffused warm light, calming tones",
+        "Close-up of massage stones, essential oils and flowers on a wooden tray, tranquil mood",
+        "Relaxing spa setting with a softly lit treatment bed, gentle steam, peaceful atmosphere"
+      ],
+      "props": ["massage stones", "scented candles", "rolled towels", "orchid flower", "essential oil bottle"],
+      "moods": ["calm", "serene", "luxurious", "soothing"],
+      "greetingExamples": ["Unwind and glow this festive season", "Wishing you peace, calm and self-care"],
+      "offerExamples": ["Festive Relaxation Package — 25% off", "Couple's Spa Day special offer"],
+      "vectorMotifs": ["lotus emblem", "spa stones icon", "leaf and droplet line-art", "candle flame badge"]
+    },
+    {
+      "id": "nail-skin-studio",
+      "name": "Nail & Skin Studio",
+      "description": "Nail art studio or skincare clinic",
+      "sceneEnvironments": [
+        "Close-up of elegant manicured nails with soft glossy finish, clean bright styling",
+        "Skincare flat-lay with serums and tools on a clean pastel surface, fresh airy light",
+        "Modern studio detail with polish bottles or skincare products neatly arranged"
+      ],
+      "props": ["manicured nails", "polish bottles", "skincare serum", "facial tools", "cotton pads"],
+      "moods": ["clean", "fresh", "pampering", "radiant"],
+      "greetingExamples": ["Glow from within this festive season", "Treat yourself — you deserve it"],
+      "offerExamples": ["Festive Mani-Pedi combo — 20% off", "Glow Facial special this week"],
+      "vectorMotifs": ["nail polish emblem", "sparkle hand icon", "droplet line-art", "flower badge"]
+    }
+  ]
+}

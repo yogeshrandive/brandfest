@@ -1,0 +1,53 @@
+{
+  "id": "coaching-education",
+  "name": "Coaching & Education",
+  "icon": "🎓",
+  "description": "Tuition centres, coaching classes, skill courses and academies",
+  "subcategories": [
+    {
+      "id": "academic-tuition",
+      "name": "Academic Tuition",
+      "description": "School/college tuition and exam coaching",
+      "sceneEnvironments": [
+        "Bright modern classroom with students engaged at desks, warm encouraging light, focused atmosphere",
+        "Close-up of books, notebook and pen on a study desk near a sunlit window, calm focus",
+        "Teacher guiding a student with a whiteboard softly blurred behind, positive learning mood"
+      ],
+      "props": ["stacked books", "notebook and pen", "whiteboard", "graduation cap", "desk globe"],
+      "moods": ["focused", "encouraging", "bright", "trustworthy"],
+      "greetingExamples": ["Wishing our students a season of success and joy", "Celebrate learning, celebrate growth"],
+      "offerExamples": ["New Batch Admissions — early-bird discount", "Free demo class this week"],
+      "vectorMotifs": ["graduation cap emblem", "open book icon", "pencil line-art", "lightbulb badge"]
+    },
+    {
+      "id": "skill-courses",
+      "name": "Skill & Professional Courses",
+      "description": "Coding, language, design and professional skill training",
+      "sceneEnvironments": [
+        "Modern learning space with a laptop and course materials on a clean desk, bright professional light",
+        "Close-up of hands working on a laptop with notes, focused productive mood, soft daylight",
+        "Collaborative workshop setting with people learning, energetic positive atmosphere, shallow focus"
+      ],
+      "props": ["laptop", "certificate", "sticky notes", "headphones", "coffee mug"],
+      "moods": ["modern", "motivating", "professional", "fresh"],
+      "greetingExamples": ["Invest in yourself this festive season", "Wishing you growth and new skills ahead"],
+      "offerExamples": ["Festive Course Offer — 40% off enrolment", "Get certified — limited seats at special fees"],
+      "vectorMotifs": ["laptop emblem", "certificate ribbon icon", "rocket line-art", "lightbulb badge"]
+    },
+    {
+      "id": "kids-activities",
+      "name": "Kids & Activities",
+      "description": "Hobby classes, dance, music and kids' activity centres",
+      "sceneEnvironments": [
+        "Cheerful activity room with colourful supplies, children engaged, bright joyful light",
+        "Close-up of art, music or craft supplies arranged playfully on a bright surface",
+        "Kids enjoying a class activity, warm happy atmosphere, soft focus background"
+      ],
+      "props": ["crayons and paints", "musical instrument", "craft supplies", "colourful blocks", "easel"],
+      "moods": ["playful", "joyful", "colourful", "warm"],
+      "greetingExamples": ["A season of fun and learning to all our little stars", "Wishing your family joy and creativity"],
+      "offerExamples": ["Festive Hobby Batches — special fees", "Free trial class for new kids this week"],
+      "vectorMotifs": ["paint palette emblem", "music note icon", "balloon line-art", "star badge"]
+    }
+  ]
+}

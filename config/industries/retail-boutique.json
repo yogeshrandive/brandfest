@@ -1,0 +1,53 @@
+{
+  "id": "retail-boutique",
+  "name": "Retail & Boutique",
+  "icon": "🛍️",
+  "description": "Clothing, fashion, accessories, gift and lifestyle stores",
+  "subcategories": [
+    {
+      "id": "fashion-apparel",
+      "name": "Fashion & Apparel",
+      "description": "Clothing boutique or apparel brand",
+      "sceneEnvironments": [
+        "Stylish boutique interior with neatly displayed garments on racks, warm spotlighting, a mannequin in focus",
+        "Flat-lay of curated outfit with accessories on a clean textured surface, soft daylight",
+        "Model detail shot of draped fabric and accessories, elegant studio light, shallow focus"
+      ],
+      "props": ["garment on hanger", "folded fabric stack", "handbag", "boutique mirror", "price tag"],
+      "moods": ["chic", "aspirational", "stylish", "fresh"],
+      "greetingExamples": ["Dress the season in style — festive wishes to you", "Celebrate in your best look this festival"],
+      "offerExamples": ["Festive Collection — Flat 30% off", "Buy 2 Get 1 Free on all apparel"],
+      "vectorMotifs": ["hanger emblem", "dress silhouette", "shopping bag icon", "needle and thread line-art"]
+    },
+    {
+      "id": "jewelry-accessories",
+      "name": "Jewellery & Accessories",
+      "description": "Jewellery store or accessories boutique",
+      "sceneEnvironments": [
+        "Close-up of jewellery on velvet with dramatic spotlighting and sparkle, dark luxurious backdrop",
+        "Elegant hand wearing a ring or bangles, soft glamorous light, gold and warm tones",
+        "Jewellery display case with curated pieces, premium lighting, reflective surfaces"
+      ],
+      "props": ["gold necklace", "diamond ring", "bangles", "velvet display", "jewellery box"],
+      "moods": ["luxurious", "elegant", "radiant", "premium"],
+      "greetingExamples": ["Shine bright this festive season", "Wishing you moments worth treasuring"],
+      "offerExamples": ["Festive Jewellery — zero making charges", "Special exchange offer this season"],
+      "vectorMotifs": ["diamond sparkle", "ring emblem", "necklace line-art", "gem facet badge"]
+    },
+    {
+      "id": "gift-lifestyle",
+      "name": "Gift & Lifestyle Store",
+      "description": "Gifts, home décor and lifestyle products",
+      "sceneEnvironments": [
+        "Beautifully wrapped gift boxes with ribbons on a warm festive surface, soft glowing lights",
+        "Curated shelf of lifestyle and décor products, cozy warm light, inviting arrangement",
+        "Flat-lay of gift items, candles and décor on a textured backdrop with festive accents"
+      ],
+      "props": ["wrapped gift box", "ribbon", "scented candle", "décor piece", "fairy lights"],
+      "moods": ["warm", "joyful", "thoughtful", "festive"],
+      "greetingExamples": ["The season of giving is here — warm wishes", "Find the perfect gift, share the joy"],
+      "offerExamples": ["Festive Gift Hampers — 25% off", "Free gift wrapping all week"],
+      "vectorMotifs": ["gift box with bow", "ribbon swirl", "star sparkle", "heart tag line-art"]
+    }
+  ]
+}

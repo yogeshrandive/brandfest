@@ -1,0 +1,53 @@
+{
+  "id": "fitness-gym",
+  "name": "Fitness & Gym",
+  "icon": "💪",
+  "description": "Gyms, fitness studios, yoga and sports coaching",
+  "subcategories": [
+    {
+      "id": "gym-strength",
+      "name": "Gym & Strength Training",
+      "description": "Commercial gym or strength studio",
+      "sceneEnvironments": [
+        "Modern gym interior with equipment and dramatic lighting, energetic atmosphere, athletic person mid-workout in focus",
+        "Close-up of dumbbells and weights racked neatly, moody gym lighting, strong contrast",
+        "Determined athlete training, dynamic motion, sweat detail, bold cinematic light"
+      ],
+      "props": ["dumbbells", "barbell", "kettlebell", "gym towel", "water bottle"],
+      "moods": ["energetic", "bold", "motivating", "powerful"],
+      "greetingExamples": ["Stronger every season — festive wishes from our team", "Celebrate progress, keep pushing"],
+      "offerExamples": ["New Year Membership — 40% off joining", "Bring a friend free for a month"],
+      "vectorMotifs": ["dumbbell emblem", "flexed arm icon", "kettlebell badge", "lightning bolt line-art"]
+    },
+    {
+      "id": "yoga-pilates",
+      "name": "Yoga & Pilates",
+      "description": "Yoga, pilates or mindful movement studio",
+      "sceneEnvironments": [
+        "Peaceful yoga studio with a person in a graceful pose, soft natural morning light, calm wooden interior",
+        "Rolled yoga mats and props in a serene minimal studio, gentle sunlight, plants in soft focus",
+        "Silhouette of a yoga pose against a warm sunrise, tranquil and balanced composition"
+      ],
+      "props": ["yoga mat", "meditation cushion", "yoga block", "indoor plant", "water glass"],
+      "moods": ["calm", "balanced", "mindful", "serene"],
+      "greetingExamples": ["Find your balance this festive season", "Breathe, restore, celebrate"],
+      "offerExamples": ["Festive Wellness Pass — 25% off", "Free trial week for new members"],
+      "vectorMotifs": ["lotus pose silhouette", "leaf emblem", "zen circle line-art", "sun and mountain badge"]
+    },
+    {
+      "id": "sports-coaching",
+      "name": "Sports & Coaching",
+      "description": "Sports academy or personal coaching",
+      "sceneEnvironments": [
+        "Outdoor sports ground at golden hour, athlete training, dynamic energetic motion, depth of field",
+        "Close-up of sports gear arranged on turf, bright daylight, crisp focus",
+        "Coach guiding a trainee in action, motivating energy, cinematic outdoor light"
+      ],
+      "props": ["sports ball", "whistle", "cones", "athletic shoes", "stopwatch"],
+      "moods": ["dynamic", "energetic", "determined", "fresh"],
+      "greetingExamples": ["Train hard, celebrate harder — festive wishes", "Here's to new goals this season"],
+      "offerExamples": ["New Batch Admissions — special festive fees", "Free assessment session this week"],
+      "vectorMotifs": ["whistle emblem", "trophy icon", "running figure line-art", "target badge"]
+    }
+  ]
+}

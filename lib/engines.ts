@@ -2,66 +2,15 @@
 // Each engine has a named library and a seeded pick function.
 // Pass a seed string (e.g. sceneId + date) for deterministic but varied results.
 
-function pick<T>(arr: T[], seed: string): T {
+export function pick<T>(arr: T[], seed: string): T {
   let h = 0;
   for (let i = 0; i < seed.length; i++) h = (Math.imul(31, h) + seed.charCodeAt(i)) | 0;
   return arr[Math.abs(h) % arr.length];
 }
 
-// ─── Scene library ────────────────────────────────────────────────────────────
-
-export const SCENE_ENVIRONMENTS = {
-  "society-garden": [
-    "Lush landscaped society garden, manicured grass, stone pathways, decorative flowering plants, premium outdoor furniture, apartment towers soft in background",
-    "Sunlit community garden, wooden pergola with climbing plants, residents relaxing on benches, water feature, modern residential towers visible",
-    "Serene society green, morning light through trees, children's play area edge, premium landscaping, glass apartment facade in distance",
-  ],
-  "apartment-lobby": [
-    "Modern marble-floored apartment lobby, tall ceiling, pendant lighting, tasteful indoor plants, polished reception desk, elevator doors in background",
-    "Premium residential entrance hall, warm amber lighting, stone-cladded walls, contemporary art piece, well-dressed doorman in soft background",
-    "Luxury apartment atrium, double-height ceiling, natural light from skylights, minimalist furniture, residential tower corridor beyond",
-  ],
-  "society-office": [
-    "Modern society management office, warm wood furniture, printed ledgers neatly stacked, large window overlooking residential complex, warm ambient light",
-    "Well-organized committee room, polished conference table, printed financial registers, framed society notice board, natural window light",
-    "Contemporary housing society administrative office, potted plants, neatly arranged files, neutral walls, soft morning light through blinds",
-  ],
-  "building-entrance": [
-    "Premium apartment complex entrance, decorative gate with intercom panel, stone paving, manicured hedges lining pathway, warm evening lighting",
-    "Modern residential society gate, security cabin with warm interior light, evening sky, clean architectural facade, lit pathway",
-    "Elegant apartment entrance archway, visitor area with soft lighting, contemporary design, well-maintained grounds, dusk sky",
-  ],
-  "agm-hall": [
-    "Community meeting hall, rows of cushioned chairs, warm wooden panelling, soft overhead lighting, small stage area, banner on back wall",
-    "Society AGM room, large oval table with printed agendas, committee members softly visible in background, professional atmosphere",
-    "Modern clubhouse meeting room, contemporary furniture, projection area (blank), tall windows with natural light, organized formal setup",
-  ],
-  "clubhouse": [
-    "Spacious residential clubhouse interior, contemporary furniture, warm ambient lighting, large windows, community banners visible",
-    "Modern society clubhouse lounge, comfortable seating arrangement, tasteful decor, open plan interior, glass walls overlooking garden",
-    "Premium clubhouse hall, warm lighting, potted plants, open social space, residential community banners in background",
-  ],
-  "festival-courtyard": [
-    "Society courtyard decorated with warm festival string lights, lanterns, marigold garlands, stone-paved open space, apartment towers lit in background",
-    "Festive community courtyard, colorful rangoli on ground, string lights overhead, evening warm glow, elegant residential backdrop",
-    "Open society plaza decorated for festival, warm amber lighting, cultural decorations, premium landscaping, modern towers in background",
-  ],
-  "rooftop": [
-    "Modern apartment rooftop terrace, city skyline at golden hour, contemporary seating, warm ambient lighting, residential towers in background",
-    "Premium rooftop community space, evening sky, comfortable outdoor furniture, city lights beginning to appear, plants in planters",
-    "Society rooftop garden, dusk sky, urban residential skyline, well-designed terrace, soft warm lighting from hidden fixtures",
-  ],
-  "abstract": [
-    "Abstract premium architectural detail, glass and steel, natural light reflections, clean geometric lines, warm gold accent elements",
-    "Minimalist architectural photography, neutral tones, soft shadows, premium material textures, clean negative space dominant",
-    "Contemporary interior abstract, warm light through frosted glass, premium surface textures, minimal and elegant",
-  ],
-};
-
-export type SceneEnvironmentKey = keyof typeof SCENE_ENVIRONMENTS;
-
-export function pickSceneEnvironment(key: SceneEnvironmentKey, seed: string): string {
-  const options = SCENE_ENVIRONMENTS[key] ?? SCENE_ENVIRONMENTS["abstract"];
+// Pick a scene environment from a business subcategory's library (industry-agnostic).
+export function pickFrom(options: string[] | undefined, seed: string, fallback = ""): string {
+  if (!options || options.length === 0) return fallback;
   return pick(options, seed);
 }
 

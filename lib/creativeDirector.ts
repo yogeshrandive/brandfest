@@ -1,116 +1,109 @@
 import { callLLM } from "./llmAdapter";
-import type { BrandConfig, SceneDefinition, SceneInputValues, PosterSize, CreativeBrief } from "./types";
+import type {
+  BrandConfig,
+  Subcategory,
+  Industry,
+  ContentMoment,
+  ImageStyle,
+  SceneInputValues,
+  PosterSize,
+  CreativeBrief,
+} from "./types";
 
-const SYSTEM_PROMPT = `You are an Art Director briefing a background art commission for a premium corporate advertising campaign.
+const SYSTEM_PROMPT = `You are an Art Director for a small-business marketing studio. You brief BACKGROUND ART ONLY for a single creative — a greeting post or an offer post — for any kind of small business.
 
-Your job is NOT to write an image prompt.
-Your job is to analyse the business, campaign, and scene — then return a structured Creative Brief as JSON.
+Your job is NOT to write the final image prompt and NOT to put any text in the image.
+Your job is to invent ONE specific, fresh creative idea for THIS business and return it as a structured Creative Brief in JSON.
 
-The artwork you are commissioning is BACKGROUND ART ONLY.
-No text will appear in the image. No logo. No UI. No screens.
-Typography, logo, and CTA will be composited on top by the design system afterwards.
+Critical rules:
+- No text, letters, words, logos, UI, screens, or watermarks appear in the artwork. Headline, logo and contact footer are composited on top afterwards.
+- You MUST reserve clean empty space for them: a smooth area for the logo, and a smooth darker area for the headline/CTA. Plan where these go and describe it precisely.
+- Use VISUAL NOUNS, not stories. scene = environment/materials/atmosphere. subject = camera focus (what/who, position, natural action).
+- Make it SPECIFIC to this business type using the provided scene material (environments, props). Avoid generic stock clichés.
+- For a "real-human" image style: real people and photographic realism are welcome. For a "vector" image style: NO people/photos — use clean flat illustration, geometric shapes, and the provided motifs; describe an illustrative composition instead.
+- logoSpec: choose a corner that stays visually clean; widthPct is logo width as % of image width (use 22-30).
+- typographySafeZone: an area with no faces/bright detail that supports white type.
 
-Think like a photographer commissioning hero editorial artwork:
-- Use VISUAL NOUNS only — not sentences or explanations
-- Scene = environment description (materials, architecture, atmosphere)
-- Subject = camera focus (who, position, natural action)
-- Every detail must produce a real, printable advertising photograph
-
-Rules:
-- scene: environment noun phrases — "marble-floored apartment lobby", "sunlit society garden", "warm committee meeting room" — NOT stories
-- subject: who the camera focuses on, position, natural candid action — specific and visual
-- Do NOT include product UI, dashboards, or software screens in scene or subject
-- designIntent: exactly 7 professional trait words that define what the image should communicate
-- visualHierarchy: ordered list of 4-5 elements from most to least visually prominent
-- businessRelevanceCues: 3-5 environment/prop details specific to housing society management (not generic SaaS)
-- typographySafeZone: exact area for text — no faces, no bright highlights, must support white type
-- backgroundQuality: lighting, texture, and material descriptors for the environment
-- negativeElements: things specific to THIS scene that AI commonly gets wrong
-
-Return ONLY valid JSON matching this exact structure:
+Return ONLY valid JSON with this exact structure:
 {
   "goal": "one sentence — what this background artwork must communicate visually",
   "mood": "2-3 precise mood words",
-  "scene": "environment noun phrases only — location, materials, atmosphere — no full sentences",
-  "subject": "camera focus — who, position, natural candid action — visual and specific",
-  "lighting": "exact lighting direction, quality, and color temperature",
-  "composition": "visual weight — where subject sits, foreground/midground/background layers, quadrant weighting",
+  "scene": "environment noun phrases — location, materials, atmosphere — no full sentences",
+  "subject": "camera/illustration focus — what, position, natural action — visual and specific",
+  "lighting": "lighting direction, quality, color temperature (or 'flat even illustration light' for vector)",
+  "composition": "visual weight — where the subject sits, foreground/background layers, which quadrants stay empty",
   "reservedAreas": [
-    { "position": "bottom", "percentage": 30, "purpose": "headline and CTA text overlay" },
+    { "position": "bottom", "percentage": 32, "purpose": "headline and CTA text overlay" },
     { "position": "top-left", "percentage": 8, "purpose": "logo placement" }
   ],
   "backgroundStyle": "3-5 word visual style descriptor",
-  "backgroundQuality": "lighting quality, material textures, architectural finish — noun phrases",
+  "backgroundQuality": "lighting quality, textures, finish — noun phrases",
   "visualKeywords": ["keyword1", "keyword2", "keyword3", "keyword4", "keyword5"],
-  "colorDirective": "specific instruction on where brand colors appear naturally in the environment",
-  "negativeElements": ["scene-specific AI mistake 1", "scene-specific AI mistake 2", "scene-specific AI mistake 3"],
+  "colorDirective": "where brand colors appear naturally in the scene",
+  "negativeElements": ["thing AI commonly gets wrong here 1", "2", "3"],
   "emotions": ["Emotion1", "Emotion2", "Emotion3"],
-  "cameraDirection": "lens mm, angle, framing, depth of field — like a cinematographer",
-  "brandPlacement": "exact position and size for logo — always top-left, 8% image width, dark background",
-  "typographySafeZone": "exact area description — smooth, dark, no faces, supports white typography",
-  "businessRelevanceCues": ["housing-society-specific prop 1", "housing-society-specific prop 2", "housing-society-specific prop 3"],
-  "designIntent": ["Professional", "Premium", "Trustworthy", "Modern", "Organized", "Technology-Enabled", "Community-Focused"],
-  "visualHierarchy": ["Primary: people collaborating", "Secondary: premium environment", "Third: architectural context", "Fourth: subtle technology cues"]
+  "cameraDirection": "lens mm, angle, framing, depth of field (or composition style for vector)",
+  "brandPlacement": "exact position and size for logo over a clean area",
+  "typographySafeZone": "exact area — smooth, no faces, supports white typography",
+  "businessRelevanceCues": ["business-specific prop/detail 1", "2", "3"],
+  "designIntent": ["Trait1", "Trait2", "Trait3", "Trait4", "Trait5"],
+  "visualHierarchy": ["Primary: ...", "Secondary: ...", "Third: ...", "Fourth: ..."],
+  "logoSpec": { "position": "top-left", "widthPct": 26 }
 }`;
 
-export async function callCreativeDirector(opts: {
-  scene: SceneDefinition;
+function brandLabel(brand: BrandConfig | undefined): string {
+  if (!brand?.name) return "(no brand details yet — keep it generic but on-category)";
+  return [
+    `Business: ${brand.name}`,
+    brand.tagline ? `Tagline: ${brand.tagline}` : "",
+    brand.brandStyle ? `Brand Style: ${brand.brandStyle}` : "",
+    brand.brandVoice ? `Voice: ${brand.brandVoice}` : "",
+    brand.colors ? `Colors: primary ${brand.colors.primary}, secondary ${brand.colors.secondary}, accent ${brand.colors.accent}` : "",
+  ].filter(Boolean).join("\n");
+}
+
+export interface CreativeDirectorOpts {
+  brand?: BrandConfig;
+  industry: Industry;
+  subcategory: Subcategory;
+  moment: ContentMoment;
   inputs: SceneInputValues;
-  brand: BrandConfig;
   size: PosterSize;
-  visualStyle?: string;
-}): Promise<CreativeBrief> {
-  const { scene, inputs, brand, size, visualStyle } = opts;
+  imageStyle: ImageStyle;
+  model?: string;
+}
+
+export async function callCreativeDirector(opts: CreativeDirectorOpts): Promise<CreativeBrief> {
+  const { brand, industry, subcategory, moment, inputs, size, imageStyle, model } = opts;
 
   const isStory = size === "story";
   const aspectNote = isStory
-    ? "Vertical 9:16. Subject fills upper 60%. Bottom 35% smooth and dark for text. Top-left clear for logo."
-    : "Square 1:1. Bottom 30% smooth and dark for text. Subject center or right-weighted. Top-left clear for logo.";
-
-  const dna = (brand as unknown as Record<string, unknown>).brandVisualDNA as {
-    colorNames?: { primary?: string; secondary?: string };
-    settings?: string[];
-    people?: string[];
-  } | undefined;
-
-  const domains = (brand as unknown as Record<string, unknown>).businessDomain as string[] | undefined;
-  const environments = (brand as unknown as Record<string, unknown>).societyVisualEnvironments as string[] | undefined;
-
-  const brandBlock = `
-Business: ${brand.name}
-Business Domain: ${domains?.join(", ") ?? brand.subCategory ?? brand.industry}
-Description: ${brand.businessDescription ?? ""}
-Brand Style: ${brand.brandStyle ?? "Premium"} | Voice: ${brand.brandVoice ?? "Professional"}
-Target Audience: ${Array.isArray(brand.targetAudience) ? brand.targetAudience.join("; ") : brand.targetAudience ?? ""}
-Primary Color: ${brand.colors.primary}${dna?.colorNames?.primary ? ` (${dna.colorNames.primary})` : ""}
-Secondary Color: ${brand.colors.secondary}${dna?.colorNames?.secondary ? ` (${dna.colorNames.secondary})` : ""}
-Accent: ${brand.colors.accent}
-Visual Environments (use these for businessRelevanceCues): ${environments?.join(", ") ?? dna?.settings?.join(", ") ?? ""}
-`.trim();
+    ? "Vertical 9:16. Hero fills upper ~60%. Bottom ~35% smooth and clean for text. One top corner clear for logo."
+    : "Square 1:1. Bottom ~30% smooth and clean for text. Subject center or one-side weighted. One top corner clear for logo.";
 
   const campaignBlock = Object.entries(inputs)
     .filter(([, v]) => v)
-    .map(([k, v]) => {
-      const def = scene.inputs.find((i) => i.key === k);
-      return `${def?.label ?? k}: ${v}`;
-    })
+    .map(([k, v]) => `${k}: ${v}`)
     .join("\n");
 
   const userMessage = `
-BRAND
-${brandBlock}
+BUSINESS
+Industry: ${industry.name} — ${industry.description}
+Subcategory: ${subcategory.name} — ${subcategory.description}
+${brandLabel(brand)}
 
-SCENE TYPE
-${scene.name} — ${scene.description}
+SCENE MATERIAL (use these, pick/combine — do not list them literally)
+Environments: ${subcategory.sceneEnvironments.join(" | ")}
+Props: ${subcategory.props.join(", ")}
+Moods: ${subcategory.moods.join(", ")}
+Vector motifs (only if vector style): ${subcategory.vectorMotifs.join(", ")}
 
-SCENE INSTRUCTIONS
-${scene.briefInstructions}
+CONTENT MOMENT
+Type: ${moment === "greeting" ? "Greeting / festive wish" : "Offer / promotion"}
+${campaignBlock || "(no specific details — invent a fitting idea)"}
 
-CAMPAIGN DETAILS
-${campaignBlock}
-
-VISUAL STYLE
-${visualStyle ?? brand.visualStyle ?? "luxury-dark"}
+IMAGE STYLE
+${imageStyle === "vector" ? "vector — flat illustration, no people, no photos" : "real-human — photographic realism, real people welcome"}
 
 FORMAT & LAYOUT
 ${aspectNote}
@@ -123,77 +116,72 @@ Generate the Creative Brief JSON now.
       { role: "system", content: SYSTEM_PROMPT },
       { role: "user", content: userMessage },
     ],
-    { temperature: 0.7, max_tokens: 1200 }
+    { model, temperature: 0.8, max_tokens: 1200 }
   );
 
   const json = raw.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "").trim();
   return JSON.parse(json) as CreativeBrief;
 }
 
-// Fallback brief when OPENROUTER_API_KEY is not set
+// Fallback brief when OPENROUTER_API_KEY is not set or a model fails.
 export function buildFallbackBrief(opts: {
-  scene: SceneDefinition;
+  industry: Industry;
+  subcategory: Subcategory;
+  moment: ContentMoment;
   inputs: SceneInputValues;
-  brand: BrandConfig;
+  brand?: BrandConfig;
   size: PosterSize;
+  imageStyle: ImageStyle;
 }): CreativeBrief {
-  const { scene, inputs, brand, size } = opts;
+  const { subcategory, moment, brand, size, imageStyle } = opts;
   const isStory = size === "story";
-  const isFestival = scene.category === "festival";
-  const festival = inputs.festival ?? "";
-  const offerTitle = inputs.offerTitle ?? "";
+  const isVector = imageStyle === "vector";
   const bottomPct = isStory ? 35 : 30;
+  const env = subcategory.sceneEnvironments[0] ?? "clean modern business setting";
+  const mood = subcategory.moods.slice(0, 3).join(" ") || "warm premium fresh";
+  const primary = brand?.colors?.primary ?? "#F5B301";
+  const secondary = brand?.colors?.secondary ?? "#1A1A2E";
 
   return {
-    goal: isFestival
-      ? `Premium background artwork for a ${festival} greeting campaign — communicate community warmth and celebration through environment and people alone`
-      : `Premium background artwork for a ${offerTitle} campaign — communicate professional trust and value through environment and people alone`,
-    mood: isFestival ? "Warm Celebratory Premium" : "Confident Professional Premium",
-    scene: isFestival
-      ? `Modern luxury residential complex courtyard, festive string lights overhead, manicured garden, premium stone pathways, warm evening atmosphere, elegant apartment towers in background`
-      : `Modern Indian society management office, warm ambient lighting, premium wood furniture, printed financial registers on desk, large windows with residential complex view`,
-    subject: isFestival
-      ? "Three families in festive attire, natural candid interaction, children in foreground, adults smiling in midground, all right-center frame"
-      : "Two committee members reviewing printed financial documents, natural engaged discussion, one laptop open screen blurred, warm confident expressions",
-    lighting: isFestival
-      ? "Warm golden-hour sunlight from right, soft festive string light glow, natural evening color warmth"
-      : "Warm diffused indoor light, soft window light from left, clean professional ambiance",
+    goal: moment === "greeting"
+      ? `Premium ${isVector ? "illustrated" : "photographic"} background for a ${subcategory.name} greeting — communicate warmth and celebration through scene alone`
+      : `Premium ${isVector ? "illustrated" : "photographic"} background for a ${subcategory.name} offer — communicate value and appeal through scene alone`,
+    mood,
+    scene: isVector
+      ? `Flat illustrated composition inspired by ${subcategory.name}, geometric shapes and motifs (${subcategory.vectorMotifs.slice(0, 3).join(", ")}), clean negative space`
+      : env,
+    subject: isVector
+      ? `Stylised central motif (${subcategory.vectorMotifs[0] ?? "brand emblem"}), balanced with supporting shapes, no people`
+      : `Hero focus on ${subcategory.props[0] ?? "the main product"}, natural and inviting, right-of-center`,
+    lighting: isVector ? "Flat even illustration light, soft gradients" : "Warm natural light, soft directional, gentle depth of field",
     composition: isStory
-      ? "Subject fills upper 60%, hero group right-center, foreground decorative elements, background architecture soft-blurred, bottom 35% smooth dark gradient"
-      : "Subject right-center quadrant, foreground desk textures, background soft-blurred architecture, bottom-left open and smooth, visual weight upper-right",
+      ? `Hero fills upper 60%, bottom ${bottomPct}% smooth and clean for text, one top corner clear`
+      : `Subject center/right, bottom ${bottomPct}% smooth and clean for text, top-left clear`,
     reservedAreas: [
       { position: "bottom", percentage: bottomPct, purpose: "headline and CTA text overlay" },
       { position: "top-left", percentage: 8, purpose: "logo placement" },
     ],
-    backgroundStyle: "Photorealistic premium commercial lifestyle",
-    backgroundQuality: "Luxury architecture, warm natural light, premium materials, rich wood and marble textures, soft depth of field",
-    visualKeywords: [
-      "premium residential community",
-      "housing society management",
-      "professional committee",
-      "modern Indian architecture",
-      "trust and organization",
-    ],
-    colorDirective: `${brand.colors.primary} appears subtly in accent details — cushions, plants, warm lights. ${brand.colors.secondary} provides depth in shadows and dark areas. Bottom zone graduates to dark for text readability.`,
-    negativeElements: [
-      "software dashboards", "UI screenshots", "readable laptop screens",
-      "generic office cubicles", "empty white walls", "posed stock photography",
-    ],
-    emotions: isFestival
-      ? ["Community", "Belonging", "Celebration", "Warmth", "Prosperity"]
-      : ["Trust", "Professionalism", "Confidence", "Reliability", "Modern"],
-    cameraDirection: "Eye-level, 35mm lens, f/2.8 natural depth of field, wide composition, center-weighted framing",
-    brandPlacement: "Logo top-left, approximately 8% image width, clear 20px margin, placed over dark smooth background area",
-    typographySafeZone: `Bottom ${bottomPct}% of image — smooth dark gradient, no faces, no bright highlights, no architectural lines crossing this zone. Must support white sans-serif typography at any size.`,
-    businessRelevanceCues: isFestival
-      ? ["modern residential complex entrance", "society clubhouse exterior", "manicured common area garden", "premium apartment towers"]
-      : ["society management office interior", "printed financial registers and ledgers", "committee meeting table", "residential complex view through window"],
-    designIntent: ["Professional", "Premium", "Trustworthy", "Modern", "Organized", "Technology-Enabled", "Community-Focused"],
+    backgroundStyle: isVector ? "Modern flat vector illustration" : "Photorealistic premium lifestyle",
+    backgroundQuality: isVector
+      ? "Clean shapes, smooth gradients, premium flat aesthetic"
+      : "Warm natural light, rich textures, soft depth of field",
+    visualKeywords: [subcategory.name, ...subcategory.moods.slice(0, 2), ...subcategory.props.slice(0, 2)],
+    colorDirective: `${primary} appears as the accent; ${secondary} grounds shadows/depth. Bottom zone graduates darker for text readability.`,
+    negativeElements: isVector
+      ? ["photographic textures", "realistic people", "3D render", "clutter"]
+      : ["text", "logos", "UI screens", "posed stock photography", "clutter"],
+    emotions: subcategory.moods.slice(0, 3).map((m) => m.charAt(0).toUpperCase() + m.slice(1)),
+    cameraDirection: isVector ? "Balanced flat composition, centered emblem, generous margins" : "Eye-level, 35mm, f/2.8 natural depth of field",
+    brandPlacement: "Logo top-left, ~26% image width, clear margin over a clean area",
+    typographySafeZone: `Bottom ${bottomPct}% — smooth, no faces/bright detail, supports white typography`,
+    businessRelevanceCues: subcategory.props.slice(0, 3),
+    designIntent: ["Premium", "On-brand", "Fresh", "Inviting", "Clear"],
     visualHierarchy: [
-      "Primary: people in natural candid interaction",
-      "Secondary: premium environment and workspace",
-      "Third: residential architecture context",
-      "Fourth: subtle technology cues (implied)",
+      "Primary: hero subject/motif",
+      "Secondary: supporting scene/props",
+      "Third: background atmosphere",
+      "Fourth: reserved clean space",
     ],
+    logoSpec: { position: "top-left", widthPct: 26 },
   };
 }

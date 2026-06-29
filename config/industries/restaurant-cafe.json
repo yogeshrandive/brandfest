@@ -1,0 +1,53 @@
+{
+  "id": "restaurant-cafe",
+  "name": "Restaurant & Café",
+  "icon": "🍽️",
+  "description": "Eateries, cafés, cloud kitchens, bakeries and bars",
+  "subcategories": [
+    {
+      "id": "fine-dining",
+      "name": "Fine Dining",
+      "description": "Upscale sit-down restaurant with curated menus",
+      "sceneEnvironments": [
+        "Elegant restaurant interior at dusk, warm pendant lighting over a beautifully plated gourmet dish in sharp focus, soft bokeh of diners behind",
+        "Chef plating a refined dish at the pass, gentle steam rising, dark moody kitchen background with warm highlights",
+        "Intimate candlelit table setting, crisp linen, polished glassware, a signature dish as the hero with shallow depth of field"
+      ],
+      "props": ["plated gourmet dish", "stemmed wine glass", "linen napkin", "ambient candles", "polished cutlery"],
+      "moods": ["elegant", "warm", "indulgent", "refined"],
+      "greetingExamples": ["Wishing you a delicious festive season from our kitchen to your table", "Celebrate the moments that matter, beautifully plated"],
+      "offerExamples": ["Weekend Chef's Tasting Menu — 20% off", "Date Night for Two — complimentary dessert"],
+      "vectorMotifs": ["fork and knife emblem", "rising steam swirl", "wine glass line-art", "laurel wreath badge"]
+    },
+    {
+      "id": "cafe-coffee",
+      "name": "Café & Coffee Shop",
+      "description": "Cozy neighbourhood café, espresso bar or coffee roastery",
+      "sceneEnvironments": [
+        "Cozy café corner with morning light, a latte with leaf art on a wooden table, soft steam, blurred warm interior",
+        "Espresso pour into a cup, rich crema, barista hands in soft focus, warm earthy café tones",
+        "Flat-lay of coffee cup, croissant and open notebook on a rustic table near a sunlit window"
+      ],
+      "props": ["latte with foam art", "croissant", "coffee beans", "ceramic mug", "wooden table"],
+      "moods": ["cozy", "fresh", "relaxed", "inviting"],
+      "greetingExamples": ["Warm wishes and warmer coffee this festive season", "Here's to fresh mornings and good company"],
+      "offerExamples": ["Buy 1 Get 1 on all coffees this weekend", "Free pastry with every cappuccino before 10am"],
+      "vectorMotifs": ["coffee cup with steam", "coffee bean pair", "to-go cup badge", "saucer and spoon line-art"]
+    },
+    {
+      "id": "bakery-desserts",
+      "name": "Bakery & Desserts",
+      "description": "Bakery, patisserie, cake studio or dessert parlour",
+      "sceneEnvironments": [
+        "Display of freshly baked pastries and cakes, golden warm light, dusting of sugar, shallow focus",
+        "Decorated celebration cake on a stand, soft pastel backdrop, delicate piping detail in focus",
+        "Baker's hands dusting flour over fresh bread, warm rustic kitchen, morning light"
+      ],
+      "props": ["frosted cake", "fresh bread loaf", "cupcakes", "rolling pin", "powdered sugar"],
+      "moods": ["sweet", "cheerful", "warm", "celebratory"],
+      "greetingExamples": ["Sweeten your celebrations with us this season", "Wishing you joy, one slice at a time"],
+      "offerExamples": ["Festive Cake Pre-Orders — 15% off", "Box of 6 cupcakes at the price of 4"],
+      "vectorMotifs": ["cupcake with cherry", "whisk emblem", "layered cake icon", "wheat sprig line-art"]
+    }
+  ]
+}

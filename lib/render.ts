@@ -4,9 +4,11 @@ import { Resvg } from "@resvg/resvg-js";
 import sharp from "sharp";
 import fs from "fs";
 import path from "path";
-import type { BrandConfig, PosterSize } from "./types";
+import type { BrandConfig, PosterSize, LogoSpec } from "./types";
 import { SIZE_CONFIGS } from "./types";
 import { getSafeZones } from "./layout";
+
+const DEFAULT_COLORS = { primary: "#F5B301", secondary: "#1A1A2E", accent: "#FFFFFF" };
 
 let fontRegular: Buffer | null = null;
 let fontBold: Buffer | null = null;
@@ -58,8 +60,9 @@ export async function renderLogoAndFooter(
   backgroundBuffer: Buffer,
   content: TextOverlayContent,
   logoDataUrl: string | null,
-  brand: BrandConfig,
-  size: PosterSize
+  brand: BrandConfig | undefined,
+  size: PosterSize,
+  logoSpec?: LogoSpec
 ): Promise<Buffer> {
   loadFonts();
 
@@ -68,16 +71,29 @@ export async function renderLogoAndFooter(
 
   const bgBuffer = await resizeBackground(backgroundBuffer, width, height);
   const bgBase64 = `data:image/png;base64,${bgBuffer.toString("base64")}`;
-  // Use provided logoDataUrl, fall back to brand.logoPath
-  const logoBase64 = logoDataUrl ?? loadLogoBase64(brand.logoPath);
+  // Use provided logoDataUrl, fall back to brand.logoPath when present
+  const logoBase64 = logoDataUrl ?? (brand?.logoPath ? loadLogoBase64(brand.logoPath) : "");
 
-  const primary = brand.colors.primary;
-  const secondary = brand.colors.secondary;
-  const accent = brand.colors.accent;
+  const colors = brand?.colors ?? DEFAULT_COLORS;
+  const contact = brand?.contact;
+  const primary = colors.primary;
+  const secondary = colors.secondary;
+  const accent = colors.accent;
 
-  // Logo — bigger, consistent sizing
-  const logoW = size === "square" ? 320 : 340;
-  const logoH = size === "square" ? 80 : 86;
+  // Logo size/position planned by the brief (logoSpec); fall back to fixed defaults.
+  const widthPct = logoSpec?.widthPct ?? (size === "square" ? 30 : 31);
+  const logoW = Math.round((width * widthPct) / 100);
+  const logoH = Math.round(logoW * 0.25);
+  const margin = size === "square" ? 40 : 50;
+  const pos = logoSpec?.position ?? "top-left";
+  const logoTop = zones.logo.top;
+  // Horizontal placement derived from the planned position.
+  const logoLeftRight: Record<string, number> = pos === "top-right"
+    ? { right: margin }
+    : pos === "top-center"
+      ? { left: Math.round((width - logoW) / 2) }
+      : { left: margin };
+  const logoObjectPos = pos === "top-right" ? "right center" : pos === "top-center" ? "center" : "left center";
 
   // Font sizes
   const headlineSize = size === "square" ? 52 : 60;
@@ -93,6 +109,14 @@ export async function renderLogoAndFooter(
   const textRight = size === "square" ? 56 : 64;
 
   const scrimTopPct = (zones.scrim.top / height) * 100;
+
+  // Footer contact items — only those the user actually provided.
+  const dot = { type: "div", props: { style: { color: hexToRgba(accent, 0.45), fontSize: contactSize }, children: "•" } };
+  const footerParts: unknown[] = [];
+  if (contact?.phone) footerParts.push({ type: "div", props: { style: { color: accent, fontSize: contactSize, fontWeight: 400 }, children: contact.phone } });
+  if (contact?.website) footerParts.push({ type: "div", props: { style: { color: primary, fontSize: contactSize, fontWeight: 600 }, children: contact.website } });
+  if (contact?.handle) footerParts.push({ type: "div", props: { style: { color: hexToRgba(accent, 0.8), fontSize: contactSize }, children: contact.handle } });
+  const footerItems: unknown[] = footerParts.flatMap((item, i) => (i === 0 ? [item] : [dot, item]));
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const element: any = {
@@ -114,10 +138,12 @@ export async function renderLogoAndFooter(
           },
         },
 
-        // Logo — top-left, larger
+        // Logo — position & size planned by the brief
         logoBase64
-          ? { type: "img", props: { src: logoBase64, style: { position: "absolute", top: zones.logo.top, left: 40, width: logoW, height: logoH, objectFit: "contain", objectPosition: "left center" } } }
-          : { type: "div", props: { style: { position: "absolute", top: zones.logo.top, left: 40, backgroundColor: primary, borderRadius: 8, padding: "10px 20px", display: "flex", alignItems: "center" }, children: [{ type: "span", props: { style: { color: "#fff", fontWeight: 700, fontSize: 24 }, children: brand.name } }] } },
+          ? { type: "img", props: { src: logoBase64, style: { position: "absolute", top: logoTop, ...logoLeftRight, width: logoW, height: logoH, objectFit: "contain", objectPosition: logoObjectPos } } }
+          : brand?.name
+            ? { type: "div", props: { style: { position: "absolute", top: logoTop, ...logoLeftRight, backgroundColor: primary, borderRadius: 8, padding: "10px 20px", display: "flex", alignItems: "center" }, children: [{ type: "span", props: { style: { color: "#fff", fontWeight: 700, fontSize: 24 }, children: brand.name } }] } }
+            : { type: "div", props: { style: { display: "none" } } },
 
         // Text zone — anchored to BOTTOM (just above footer), no floating gap
         {
@@ -148,20 +174,14 @@ export async function renderLogoAndFooter(
           },
         },
 
-        // Contact footer — solid dark strip flush at bottom
-        {
+        // Contact footer — solid dark strip flush at bottom (only when there is contact info)
+        ...(footerItems.length > 0 ? [{
           type: "div",
           props: {
             style: { position: "absolute", bottom: 0, left: 0, right: 0, height: footerH, backgroundColor: "#000000", borderTop: `2px solid ${hexToRgba(primary, 0.5)}`, display: "flex", alignItems: "center", justifyContent: "center", gap: 28, paddingLeft: 40, paddingRight: 40 },
-            children: [
-              { type: "div", props: { style: { color: accent, fontSize: contactSize, fontWeight: 400 }, children: brand.contact.phone } },
-              { type: "div", props: { style: { color: hexToRgba(accent, 0.45), fontSize: contactSize }, children: "•" } },
-              { type: "div", props: { style: { color: primary, fontSize: contactSize, fontWeight: 600 }, children: brand.contact.website } },
-              { type: "div", props: { style: { color: hexToRgba(accent, 0.45), fontSize: contactSize }, children: "•" } },
-              { type: "div", props: { style: { color: hexToRgba(accent, 0.8), fontSize: contactSize }, children: brand.contact.handle } },
-            ],
+            children: footerItems,
           },
-        },
+        }] : []),
       ],
     },
   };
@@ -207,7 +227,6 @@ export async function renderPoster(
   const ctaSize = size === "square" ? 24 : 28;
   const contactSize = size === "square" ? 22 : 24;
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const element: ReactNode = {
       type: "div",
       props: {

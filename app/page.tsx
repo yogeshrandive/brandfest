@@ -5,339 +5,200 @@ import type {
   PosterSize,
   GeneratedPoster,
   BrandConfig,
-  VisualStyle,
-  SceneDefinition,
-  SceneInputValues,
+  Industry,
+  Subcategory,
+  ContentMoment,
+  ImageStyle,
   CreativeBrief,
-  CreativeStyle,
 } from "@/lib/types";
-import { STYLE_DEFINITIONS, getDefaultStyle } from "@/lib/styles";
-
-interface BrandAsset {
-  filename: string;
-  url: string;
-  isLogo: boolean;
-}
-import { VISUAL_TEMPLATES, VISUAL_STYLE_ORDER } from "@/lib/templates";
+import {
+  getBrand,
+  saveBrand,
+  getModels,
+  addModel as storeAddModel,
+  deleteModel as storeDeleteModel,
+  getActiveModels,
+  setActiveModels as storeSetActiveModels,
+} from "@/lib/clientStore";
 
 const SIZE_LABELS: Record<PosterSize, string> = {
   square: "Square 1080×1080 (Post)",
   story: "Story 1080×1920 (Status/Reel)",
 };
 
-type ActiveTab = "create" | "brand";
+const IMAGE_STYLES: { id: ImageStyle; label: string; icon: string; desc: string }[] = [
+  { id: "real-human", label: "Real Human", icon: "📸", desc: "Photographic, real people & places" },
+  { id: "vector", label: "Vector", icon: "🎨", desc: "Flat illustration, shapes & motifs" },
+];
 
-// ─── Color picker ─────────────────────────────────────────────────────────────
+type ActiveTab = "create" | "brand" | "models";
 
-function ColorField({
-  label,
-  value,
-  onChange,
-}: {
-  label: string;
-  value: string;
-  onChange: (v: string) => void;
-}) {
-  return (
-    <div className="flex items-center justify-between">
-      <label className="text-sm text-white/60">{label}</label>
-      <div className="flex items-center gap-2">
-        <input
-          type="color"
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          className="w-9 h-9 rounded cursor-pointer border border-white/10 bg-transparent p-0.5"
-        />
-        <input
-          type="text"
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          className="w-28 bg-white/5 border border-white/10 rounded px-2 py-1.5 text-sm font-mono text-white focus:outline-none focus:border-[#F5B301]/50"
-          placeholder="#000000"
-        />
-        <div className="w-6 h-6 rounded border border-white/20" style={{ backgroundColor: value }} />
-      </div>
-    </div>
-  );
+interface ModelResult {
+  model: string;
+  brief?: CreativeBrief;
+  prompts?: { size: PosterSize; prompt: string }[];
+  error?: string;
 }
 
-// ─── Style chips ──────────────────────────────────────────────────────────────
+const GOLD = "#F5B301";
 
-function StylePicker({
-  value,
-  onChange,
-}: {
-  value: VisualStyle;
-  onChange: (s: VisualStyle) => void;
-}) {
-  return (
-    <div className="flex gap-2 flex-wrap">
-      {VISUAL_STYLE_ORDER.map((id) => {
-        const t = VISUAL_TEMPLATES[id];
-        const active = value === id;
-        return (
-          <button
-            key={id}
-            onClick={() => onChange(id)}
-            title={t.description}
-            className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all ${
-              active
-                ? "bg-[#F5B301] text-[#1A1A2E] border-[#F5B301]"
-                : "bg-white/5 text-white/60 border-white/10 hover:border-[#F5B301]/40 hover:text-white"
-            }`}
-          >
-            {t.name}
-          </button>
-        );
-      })}
-    </div>
-  );
+function emptyBrand(): BrandConfig {
+  return {
+    name: "",
+    logoPath: "",
+    industry: "",
+    subCategory: "",
+    tagline: "",
+    website: "",
+    colors: { primary: GOLD, secondary: "#1A1A2E", accent: "#FFFFFF" },
+    contact: { phone: "", email: "", website: "", handle: "" },
+    visualStyle: "luxury-dark",
+  };
 }
 
-// ─── Scene input renderer ─────────────────────────────────────────────────────
-
-function SceneInputField({
-  def,
-  value,
-  onChange,
-}: {
-  def: SceneDefinition["inputs"][0];
-  value: string;
-  onChange: (v: string) => void;
+function Field({ label, value, onChange, placeholder, type = "text" }: {
+  label: string; value: string; onChange: (v: string) => void; placeholder?: string; type?: string;
 }) {
-  const base =
-    "w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2.5 text-white text-sm placeholder:text-white/20 focus:outline-none focus:border-[#F5B301]/50";
-
+  const base = "w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2.5 text-white text-sm placeholder:text-white/20 focus:outline-none focus:border-[#F5B301]/50";
   return (
     <div>
-      <div className="flex items-center justify-between mb-1">
-        <label className="text-xs text-white/50">
-          {def.label}
-          {def.required && <span className="text-[#F5B301] ml-0.5">*</span>}
-        </label>
-        {def.randomizable && def.suggestions && (
-          <button
-            onClick={() => {
-              const pool = def.suggestions!;
-              onChange(pool[Math.floor(Math.random() * pool.length)]);
-            }}
-            className="text-xs text-[#F5B301]/60 hover:text-[#F5B301] transition-colors"
-          >
-            ✦ Random
-          </button>
-        )}
-      </div>
-
-      {def.type === "select" ? (
-        <select
-          value={value || def.default || ""}
-          onChange={(e) => onChange(e.target.value)}
-          className={base}
-        >
-          {!value && !def.default && (
-            <option value="" className="bg-[#1A1A2E]">
-              Choose…
-            </option>
-          )}
-          {def.options?.map((o) => (
-            <option key={o} value={o} className="bg-[#1A1A2E]">
-              {o}
-            </option>
-          ))}
-        </select>
-      ) : def.type === "textarea" ? (
-        <textarea
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          placeholder={def.placeholder}
-          rows={2}
-          className={`${base} resize-none`}
-        />
-      ) : def.type === "date" ? (
-        <input
-          type="date"
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          className={base}
-        />
+      <label className="text-xs text-white/40 block mb-1">{label}</label>
+      {type === "textarea" ? (
+        <textarea value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} rows={2} className={`${base} resize-none`} />
       ) : (
-        <div>
-          <input
-            type="text"
-            value={value}
-            onChange={(e) => onChange(e.target.value)}
-            placeholder={def.placeholder}
-            className={base}
-            list={def.suggestions ? `suggestions-${def.key}` : undefined}
-          />
-          {def.suggestions && (
-            <datalist id={`suggestions-${def.key}`}>
-              {def.suggestions.map((s) => (
-                <option key={s} value={s} />
-              ))}
-            </datalist>
-          )}
-        </div>
+        <input type={type} value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} className={base} />
       )}
     </div>
   );
 }
 
-// ─── Main ─────────────────────────────────────────────────────────────────────
+function ColorField({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
+  return (
+    <div className="flex items-center justify-between">
+      <label className="text-sm text-white/60">{label}</label>
+      <div className="flex items-center gap-2">
+        <input type="color" value={value} onChange={(e) => onChange(e.target.value)} className="w-9 h-9 rounded cursor-pointer border border-white/10 bg-transparent p-0.5" />
+        <input type="text" value={value} onChange={(e) => onChange(e.target.value)} className="w-28 bg-white/5 border border-white/10 rounded px-2 py-1.5 text-sm font-mono text-white focus:outline-none" />
+      </div>
+    </div>
+  );
+}
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState<ActiveTab>("create");
 
-  // ── Scene state ──
-  const [scenes, setScenes] = useState<SceneDefinition[]>([]);
-  const [selectedSceneId, setSelectedSceneId] = useState<string>("");
-  const [sceneInputs, setSceneInputs] = useState<SceneInputValues>({});
+  // Taxonomy
+  const [industries, setIndustries] = useState<Industry[]>([]);
+  const [industryId, setIndustryId] = useState<string>("");
+  const [subcategoryId, setSubcategoryId] = useState<string>("");
+
+  // Creative config
+  const [moment, setMoment] = useState<ContentMoment>("greeting");
+  const [imageStyle, setImageStyle] = useState<ImageStyle>("real-human");
+  const [inputs, setInputs] = useState<Record<string, string>>({});
   const [sizes, setSizes] = useState<PosterSize[]>(["square"]);
-  const [visualStyle, setVisualStyle] = useState<VisualStyle>("luxury-dark");
-  const [creativeStyle, setCreativeStyle] = useState<CreativeStyle>("realistic");
+
+  // Models
+  const [models, setModels] = useState<string[]>([]);
+  const [activeModels, setActiveModels] = useState<string[]>([]);
+  const [newModel, setNewModel] = useState("");
+
+  // Brand
+  const [brand, setBrand] = useState<BrandConfig | null>(null);
+
+  // Results
+  const [results, setResults] = useState<ModelResult[]>([]);
+  const [images, setImages] = useState<Record<string, GeneratedPoster>>({}); // key `${model}|${size}`
   const [loading, setLoading] = useState(false);
-  const [imageLoading, setImageLoading] = useState(false);
+  const [rendering, setRendering] = useState<Record<string, boolean>>({});
   const [error, setError] = useState<string | null>(null);
-  const [posters, setPosters] = useState<GeneratedPoster[]>([]);
-  const [prompts, setPrompts] = useState<{ size: PosterSize; prompt: string }[]>([]);
-  const [lastBrief, setLastBrief] = useState<CreativeBrief | null>(null);
 
-  // ── Reference image state ──
-  const [assets, setAssets] = useState<BrandAsset[]>([]);
-  const [selectedReference, setSelectedReference] = useState<string | null>(null); // filename
-  const [referenceStrength, setReferenceStrength] = useState(0.15);
+  const industry = industries.find((i) => i.id === industryId) ?? null;
+  const subcategory: Subcategory | null = industry?.subcategories.find((s) => s.id === subcategoryId) ?? null;
+  const onboarded = !!industryId && !!subcategoryId;
 
-  // ── Brand state ──
-  const [brandForm, setBrandForm] = useState<BrandConfig | null>(null);
-  const [brandLoading, setBrandLoading] = useState(true);
-  const [brandSaving, setBrandSaving] = useState(false);
-  const [brandSaveResult, setBrandSaveResult] = useState<{ persisted: boolean } | null>(null);
-  const [enriching, setEnriching] = useState(false);
-  const [enrichResult, setEnrichResult] = useState<string | null>(null);
-
-  const selectedScene = scenes.find((s) => s.id === selectedSceneId) ?? null;
-
-  // Load scenes + brand on mount
+  // Load taxonomy + persisted state
   useEffect(() => {
-    fetch("/api/scenes")
-      .then((r) => r.json())
-      .then((data: SceneDefinition[]) => {
-        const list = Array.isArray(data) ? data : [];
-        setScenes(list);
-        if (list.length > 0) setSelectedSceneId(list[0].id);
-      })
-      .catch(() => {});
-
-    fetch("/api/brand")
-      .then((r) => r.json())
-      .then((data: BrandConfig) => {
-        setBrandForm(data);
-        if (data.visualStyle) setVisualStyle(data.visualStyle);
-      })
-      .catch(() => {})
-      .finally(() => setBrandLoading(false));
-
-    fetch("/api/brand/assets")
-      .then((r) => r.json())
-      .then((data: { assets?: BrandAsset[] }) => {
-        const list = Array.isArray(data?.assets) ? data.assets : [];
-        setAssets(list);
-        // Auto-select the logo as default reference
-        const logo = list.find((a) => a.isLogo);
-        if (logo) setSelectedReference(logo.filename);
-      })
-      .catch(() => {});
+    fetch("/api/industries").then((r) => r.json()).then((data: Industry[]) => {
+      setIndustries(Array.isArray(data) ? data : []);
+    }).catch(() => {});
+    // Hydrate persisted state from localStorage (client-only).
+    /* eslint-disable react-hooks/set-state-in-effect */
+    setBrand(getBrand() ?? emptyBrand());
+    setModels(getModels());
+    setActiveModels(getActiveModels());
+    /* eslint-enable react-hooks/set-state-in-effect */
   }, []);
 
-  // Reset inputs when scene changes
-  useEffect(() => {
-    if (!selectedScene) return;
-    const defaults: SceneInputValues = {};
-    selectedScene.inputs.forEach((i) => {
-      if (i.default) defaults[i.key] = i.default;
-    });
-    setSceneInputs(defaults);
-    setCreativeStyle(getDefaultStyle(selectedSceneId));
-    setPosters([]);
-    setPrompts([]);
-    setLastBrief(null);
+  function chooseSubcategory(iId: string, sId: string) {
+    setIndustryId(iId);
+    setSubcategoryId(sId);
+    setInputs({});
+    setResults([]);
+    setImages({});
     setError(null);
-  }, [selectedSceneId]);
+  }
 
-  // ── Generate ──
+  function setInput(key: string, value: string) {
+    setInputs((prev) => ({ ...prev, [key]: value }));
+  }
 
   function toggleSize(s: PosterSize) {
     setSizes((prev) => (prev.includes(s) ? prev.filter((x) => x !== s) : [...prev, s]));
   }
 
+  function toggleActiveModel(m: string) {
+    const next = activeModels.includes(m) ? activeModels.filter((x) => x !== m) : [...activeModels, m];
+    const final = next.length ? next : [m];
+    setActiveModels(final);
+    storeSetActiveModels(final);
+  }
+
+  function logoDataUrl(): string | null {
+    return brand?.logoPath?.startsWith("data:") ? brand.logoPath : null;
+  }
+
+  // ── Generate briefs (compare across selected models) ──
   async function generate() {
-    if (!selectedScene) return;
+    if (!onboarded) { setError("Pick a business category first."); return; }
     if (sizes.length === 0) { setError("Select at least one output size."); return; }
-
-    const missing = selectedScene.inputs
-      .filter((i) => i.required && !sceneInputs[i.key])
-      .map((i) => i.label);
-    if (missing.length > 0) {
-      setError(`Required: ${missing.join(", ")}`);
-      return;
-    }
-
     setLoading(true);
-    setImageLoading(false);
     setError(null);
-    setPosters([]);
-    setPrompts([]);
-    setLastBrief(null);
-
+    setResults([]);
+    setImages({});
     try {
-      // Stage 1+2: Get creative brief + prompts (fast, ~10–15s)
       const res = await fetch("/api/generate-scene", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ sceneId: selectedSceneId, inputs: sceneInputs, sizes, visualStyle }),
+        body: JSON.stringify({ industryId, subcategoryId, moment, inputs, sizes, imageStyle, brand, models: activeModels }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Generation failed");
-
-      const brief = data.brief ?? null;
-      const generatedPrompts: { size: PosterSize; prompt: string }[] = data.prompts ?? [];
-      if (brief) setLastBrief(brief);
-      if (generatedPrompts.length) setPrompts(generatedPrompts);
-
-      // Stage 3+4: Generate images per size in parallel (slow, ~30–60s each)
-      if (generatedPrompts.length > 0 && process.env.NEXT_PUBLIC_IMAGE_ENABLED !== "false") {
-        setLoading(false);
-        setImageLoading(true);
-        await Promise.all(
-          generatedPrompts.map(async ({ size }) => {
-            try {
-              const imgRes = await fetch("/api/generate-image", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                  size,
-                  sceneId: selectedSceneId,
-                  inputs: sceneInputs,
-                  brief,
-                  creativeStyle,
-                  selectedLogo: selectedReference ?? undefined,
-                }),
-              });
-              const imgData = await imgRes.json();
-              if (imgRes.ok && imgData.poster) {
-                setPosters((prev) => [...prev, imgData.poster]);
-              }
-            } catch (imgErr) {
-              console.error(`[generate-image] ${size} failed:`, imgErr);
-            }
-          })
-        );
-      }
+      setResults(data.results ?? []);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Generation failed");
     } finally {
       setLoading(false);
-      setImageLoading(false);
+    }
+  }
+
+  // ── Render an image for one model's brief + size ──
+  async function renderImage(model: string, brief: CreativeBrief, size: PosterSize) {
+    const key = `${model}|${size}`;
+    setRendering((p) => ({ ...p, [key]: true }));
+    try {
+      const res = await fetch("/api/generate-image", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ size, industryId, subcategoryId, moment, inputs, brief, imageStyle, brand, logoDataUrl: logoDataUrl() }),
+      });
+      const data = await res.json();
+      if (res.ok && data.poster) setImages((p) => ({ ...p, [key]: data.poster }));
+      else throw new Error(data.error ?? "Image failed");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Image failed");
+    } finally {
+      setRendering((p) => ({ ...p, [key]: false }));
     }
   }
 
@@ -349,738 +210,327 @@ export default function Home() {
   }
 
   // ── Brand helpers ──
-
-  function updateBrandField<K extends keyof BrandConfig>(field: K, value: BrandConfig[K]) {
-    setBrandForm((prev) => (prev ? { ...prev, [field]: value } : prev));
-    setBrandSaveResult(null);
+  function updateBrand(patch: Partial<BrandConfig>) {
+    setBrand((prev) => {
+      const next = { ...(prev ?? emptyBrand()), ...patch } as BrandConfig;
+      saveBrand(next);
+      return next;
+    });
+  }
+  function updateColor(field: keyof BrandConfig["colors"], v: string) {
+    setBrand((prev) => {
+      const base = prev ?? emptyBrand();
+      const next = { ...base, colors: { ...base.colors, [field]: v } };
+      saveBrand(next);
+      return next;
+    });
+  }
+  function updateContact(field: keyof BrandConfig["contact"], v: string) {
+    setBrand((prev) => {
+      const base = prev ?? emptyBrand();
+      const next = { ...base, contact: { ...base.contact, [field]: v } };
+      saveBrand(next);
+      return next;
+    });
+  }
+  function onLogoFile(file: File) {
+    const reader = new FileReader();
+    reader.onload = () => updateBrand({ logoPath: String(reader.result) });
+    reader.readAsDataURL(file);
   }
 
-  function updateBrandContact(field: keyof BrandConfig["contact"], value: string) {
-    setBrandForm((prev) =>
-      prev ? { ...prev, contact: { ...prev.contact, [field]: value } } : prev
-    );
-    setBrandSaveResult(null);
+  // ── Models tab helpers ──
+  function addModelHandler() {
+    if (!newModel.trim()) return;
+    setModels(storeAddModel(newModel));
+    setNewModel("");
+  }
+  function deleteModelHandler(m: string) {
+    setModels(storeDeleteModel(m));
+    setActiveModels(getActiveModels());
   }
 
-  function updateBrandColor(field: keyof BrandConfig["colors"], value: string) {
-    setBrandForm((prev) =>
-      prev ? { ...prev, colors: { ...prev.colors, [field]: value } } : prev
-    );
-    setBrandSaveResult(null);
-  }
-
-  async function saveBrand() {
-    if (!brandForm) return;
-    setBrandSaving(true);
-    setBrandSaveResult(null);
-    try {
-      const res = await fetch("/api/brand", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(brandForm),
-      });
-      const data = await res.json();
-      setBrandForm(data.brand);
-      setBrandSaveResult({ persisted: data.persisted });
-      if (data.brand.visualStyle) setVisualStyle(data.brand.visualStyle);
-    } catch {
-      setBrandSaveResult({ persisted: false });
-    } finally {
-      setBrandSaving(false);
-    }
-  }
-
-  async function enrichBrand() {
-    setEnriching(true);
-    setEnrichResult(null);
-    try {
-      const res = await fetch("/api/enrich-brand", { method: "POST" });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Enrichment failed");
-      setBrandForm(data.brand);
-      setEnrichResult("Brand enriched with AI insights.");
-    } catch (err) {
-      setEnrichResult(err instanceof Error ? err.message : "Failed");
-    } finally {
-      setEnriching(false);
-    }
-  }
-
-  function downloadBrandJson() {
-    if (!brandForm) return;
-    const blob = new Blob([JSON.stringify(brandForm, null, 2)], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "brand.json";
-    a.click();
-    URL.revokeObjectURL(url);
-  }
-
-  // ─────────────────────────────────────────────────────────────────────────────
+  // ───────────────────────────────────────────────────────────────────────────
 
   return (
     <main className="min-h-screen bg-[#1A1A2E] text-white">
-      {/* Header */}
       <header className="bg-[#16213E] border-b border-[#F5B301]/20 px-6 py-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-[#F5B301] rounded-lg flex items-center justify-center font-bold text-[#1A1A2E] text-lg">
-            SB
-          </div>
+          <div className="w-10 h-10 bg-[#F5B301] rounded-lg flex items-center justify-center font-bold text-[#1A1A2E] text-lg">BF</div>
           <div>
-            <h1 className="font-bold text-xl text-[#F5B301]">{brandForm?.name ?? "BrandFest"}</h1>
-            <p className="text-xs text-white/50">Creative Generator</p>
+            <h1 className="font-bold text-xl text-[#F5B301]">BrandFest</h1>
+            <p className="text-xs text-white/50">Creative Studio for Small Businesses</p>
           </div>
         </div>
         <div className="flex rounded-lg overflow-hidden border border-white/10">
-          {(["create", "brand"] as ActiveTab[]).map((tab) => (
-            <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              className={`px-5 py-2 text-sm font-semibold transition-colors ${
-                activeTab === tab
-                  ? "bg-[#F5B301] text-[#1A1A2E]"
-                  : "bg-white/5 text-white/60 hover:bg-white/10"
-              }`}
-            >
-              {tab === "create" ? "Create" : "Brand Settings"}
+          {(["create", "brand", "models"] as ActiveTab[]).map((tab) => (
+            <button key={tab} onClick={() => setActiveTab(tab)}
+              className={`px-5 py-2 text-sm font-semibold transition-colors ${activeTab === tab ? "bg-[#F5B301] text-[#1A1A2E]" : "bg-white/5 text-white/60 hover:bg-white/10"}`}>
+              {tab === "create" ? "Create" : tab === "brand" ? "Branding" : "Models"}
             </button>
           ))}
         </div>
       </header>
 
-      {/* ── Create Tab ───────────────────────────────────────────────────────── */}
-      {activeTab === "create" && (
-        <div className="max-w-5xl mx-auto px-4 py-8 grid md:grid-cols-[400px_1fr] gap-8">
-          {/* Left controls */}
-          <section className="space-y-6">
+      {/* ── Onboarding: pick business category ── */}
+      {activeTab === "create" && !onboarded && (
+        <div className="max-w-4xl mx-auto px-4 py-10">
+          <h2 className="text-2xl font-bold mb-1">What kind of business do you run?</h2>
+          <p className="text-white/50 text-sm mb-6">Pick a category to start. You can add your logo & details later.</p>
+          <div className="space-y-6">
+            {industries.map((ind) => (
+              <div key={ind.id}>
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-xl">{ind.icon}</span>
+                  <h3 className="font-semibold text-white/80">{ind.name}</h3>
+                  <span className="text-xs text-white/30">{ind.description}</span>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  {ind.subcategories.map((sub) => (
+                    <button key={sub.id} onClick={() => chooseSubcategory(ind.id, sub.id)}
+                      className="px-4 py-3 rounded-xl border border-white/10 bg-white/5 hover:border-[#F5B301]/50 text-left transition-all">
+                      <div className="text-sm font-semibold text-white/80">{sub.name}</div>
+                      <div className="text-xs text-white/40 mt-0.5 leading-tight">{sub.description}</div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ))}
+            {industries.length === 0 && <p className="text-white/30 text-sm">Loading categories…</p>}
+          </div>
+        </div>
+      )}
 
-            {/* Scene picker */}
+      {/* ── Create ── */}
+      {activeTab === "create" && onboarded && (
+        <div className="max-w-6xl mx-auto px-4 py-8 grid md:grid-cols-[380px_1fr] gap-8">
+          {/* Controls */}
+          <section className="space-y-6">
+            {/* Selected category */}
+            <div className="flex items-center justify-between p-3 rounded-xl border border-[#F5B301]/30 bg-[#F5B301]/5">
+              <div>
+                <div className="text-xs text-white/40">{industry?.name}</div>
+                <div className="text-sm font-semibold text-[#F5B301]">{subcategory?.name}</div>
+              </div>
+              <button onClick={() => { setIndustryId(""); setSubcategoryId(""); }} className="text-xs text-white/40 hover:text-white">Change</button>
+            </div>
+
+            {!brand?.name && (
+              <button onClick={() => setActiveTab("brand")} className="w-full text-left p-3 rounded-xl border border-dashed border-white/15 text-xs text-white/50 hover:border-[#F5B301]/40">
+                ✦ Add your branding (logo, name, colours) for branded output →
+              </button>
+            )}
+
+            {/* Moment toggle */}
             <div>
-              <label className="text-xs uppercase tracking-widest text-white/40 mb-3 block">
-                Creative Type
-              </label>
-              <div className="grid grid-cols-2 gap-2">
-                {scenes.map((scene) => (
-                  <button
-                    key={scene.id}
-                    onClick={() => setSelectedSceneId(scene.id)}
-                    className={`px-4 py-3 rounded-xl border text-left transition-all ${
-                      selectedSceneId === scene.id
-                        ? "border-[#F5B301]/60 bg-[#F5B301]/10"
-                        : "border-white/10 bg-white/5 hover:border-white/20"
-                    }`}
-                  >
-                    <div className="text-xl mb-1">{scene.icon}</div>
-                    <div className={`text-sm font-semibold ${selectedSceneId === scene.id ? "text-[#F5B301]" : "text-white/80"}`}>
-                      {scene.name}
-                    </div>
-                    <div className="text-xs text-white/40 mt-0.5 leading-tight">{scene.description}</div>
+              <label className="text-xs uppercase tracking-widest text-white/40 mb-2 block">Content Type</label>
+              <div className="flex gap-2">
+                {(["greeting", "offer"] as ContentMoment[]).map((m) => (
+                  <button key={m} onClick={() => { setMoment(m); setInputs({}); }}
+                    className={`flex-1 px-4 py-2.5 rounded-lg text-sm font-semibold border transition-all ${moment === m ? "bg-[#F5B301] text-[#1A1A2E] border-[#F5B301]" : "bg-white/5 text-white/60 border-white/10 hover:border-[#F5B301]/40"}`}>
+                    {m === "greeting" ? "🎉 Greeting" : "🏷️ Offer"}
                   </button>
                 ))}
               </div>
             </div>
 
-            {/* Scene inputs */}
-            {selectedScene && (
-              <div className="space-y-4">
-                <label className="text-xs uppercase tracking-widest text-white/40 block">
-                  {selectedScene.name} Details
-                </label>
-                {selectedScene.inputs.map((def) => (
-                  <SceneInputField
-                    key={def.key}
-                    def={def}
-                    value={sceneInputs[def.key] ?? ""}
-                    onChange={(v) =>
-                      setSceneInputs((prev) => ({ ...prev, [def.key]: v }))
-                    }
-                  />
-                ))}
-              </div>
-            )}
-
-            {/* Creative Style */}
-            <div>
-              <label className="text-xs uppercase tracking-widest text-white/40 mb-3 block">
-                Creative Style
-              </label>
-              <div className="flex flex-wrap gap-2">
-                {(Object.values(STYLE_DEFINITIONS) as typeof STYLE_DEFINITIONS[CreativeStyle][]).map((styleDef) => {
-                  const active = creativeStyle === styleDef.id;
-                  return (
-                    <button
-                      key={styleDef.id}
-                      onClick={() => setCreativeStyle(styleDef.id)}
-                      title={styleDef.description}
-                      className={`px-3 py-2 rounded-xl border text-left transition-all ${
-                        active
-                          ? "border-[#F5B301]/60 bg-[#F5B301]/10"
-                          : "border-white/10 bg-white/5 hover:border-white/20"
-                      }`}
-                    >
-                      <span className="mr-1.5">{styleDef.icon}</span>
-                      <span className={`text-sm font-semibold ${active ? "text-[#F5B301]" : "text-white/80"}`}>
-                        {styleDef.label}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-              {STYLE_DEFINITIONS[creativeStyle] && (
-                <p className="text-xs text-white/30 mt-2">{STYLE_DEFINITIONS[creativeStyle].description}</p>
+            {/* Inputs */}
+            <div className="space-y-4">
+              {moment === "greeting" ? (
+                <>
+                  <Field label="Occasion / Festival (optional)" value={inputs.festival ?? ""} onChange={(v) => setInput("festival", v)} placeholder="Diwali, New Year, Anniversary…" />
+                  <Field label="Greeting Message" type="textarea" value={inputs.greetingMessage ?? ""} onChange={(v) => setInput("greetingMessage", v)} placeholder={subcategory?.greetingExamples[0]} />
+                  {subcategory?.greetingExamples?.length ? (
+                    <button onClick={() => setInput("greetingMessage", subcategory.greetingExamples[Math.floor(Math.random() * subcategory.greetingExamples.length)])} className="text-xs text-[#F5B301]/70 hover:text-[#F5B301]">✦ Suggest a message</button>
+                  ) : null}
+                  <Field label="From (optional)" value={inputs.fromName ?? ""} onChange={(v) => setInput("fromName", v)} placeholder={brand?.name || "Your business name"} />
+                </>
+              ) : (
+                <>
+                  <Field label="Offer Title" value={inputs.offerTitle ?? ""} onChange={(v) => setInput("offerTitle", v)} placeholder={subcategory?.offerExamples[0]} />
+                  {subcategory?.offerExamples?.length ? (
+                    <button onClick={() => setInput("offerTitle", subcategory.offerExamples[Math.floor(Math.random() * subcategory.offerExamples.length)])} className="text-xs text-[#F5B301]/70 hover:text-[#F5B301]">✦ Suggest an offer</button>
+                  ) : null}
+                  <Field label="Description (optional)" value={inputs.offerDescription ?? ""} onChange={(v) => setInput("offerDescription", v)} placeholder="Short supporting line" />
+                  <Field label="Call to action (optional)" value={inputs.cta ?? ""} onChange={(v) => setInput("cta", v)} placeholder="Call Now, Book Today…" />
+                  <Field label="Valid until (optional)" type="date" value={inputs.expiryDate ?? ""} onChange={(v) => setInput("expiryDate", v)} />
+                </>
               )}
             </div>
 
-            {/* Reference image */}
-            {assets.length > 0 && (
-              <div>
-                <label className="text-xs uppercase tracking-widest text-white/40 mb-2 block">
-                  Brand Reference Image
-                </label>
-                <div className="grid grid-cols-3 gap-2 mb-3">
-                  {assets.map((asset) => (
-                    <button
-                      key={asset.filename}
-                      onClick={() =>
-                        setSelectedReference(
-                          selectedReference === asset.filename ? null : asset.filename
-                        )
-                      }
-                      className={`relative rounded-lg overflow-hidden border-2 transition-all aspect-square ${
-                        selectedReference === asset.filename
-                          ? "border-[#F5B301]"
-                          : "border-white/10 hover:border-white/30"
-                      }`}
-                    >
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={asset.url}
-                        alt={asset.filename}
-                        className="w-full h-full object-contain bg-white/5 p-1"
-                      />
-                      {asset.isLogo && (
-                        <span className="absolute bottom-0 left-0 right-0 text-center text-[10px] bg-[#F5B301]/80 text-[#1A1A2E] font-bold py-0.5">
-                          Logo
-                        </span>
-                      )}
-                      {selectedReference === asset.filename && (
-                        <div className="absolute top-1 right-1 w-4 h-4 bg-[#F5B301] rounded-full flex items-center justify-center text-[#1A1A2E] text-[10px] font-bold">
-                          ✓
-                        </div>
-                      )}
-                    </button>
-                  ))}
-                </div>
-                {selectedReference && (
-                  <div>
-                    <div className="flex items-center justify-between mb-1">
-                      <label className="text-xs text-white/40">Reference Strength</label>
-                      <span className="text-xs text-[#F5B301] font-mono">{referenceStrength.toFixed(2)}</span>
-                    </div>
-                    <input
-                      type="range"
-                      min="0.05"
-                      max="0.40"
-                      step="0.05"
-                      value={referenceStrength}
-                      onChange={(e) => setReferenceStrength(parseFloat(e.target.value))}
-                      className="w-full accent-[#F5B301]"
-                    />
-                    <div className="flex justify-between text-[10px] text-white/20 mt-0.5">
-                      <span>Subtle</span>
-                      <span>Strong</span>
-                    </div>
-                  </div>
-                )}
-                {!selectedReference && (
-                  <p className="text-xs text-white/30">No reference selected — AI generates freely</p>
-                )}
-              </div>
-            )}
-
-            {/* Visual style */}
+            {/* Image style */}
             <div>
-              <label className="text-xs uppercase tracking-widest text-white/40 mb-2 block">
-                Visual Style
-              </label>
-              <StylePicker value={visualStyle} onChange={setVisualStyle} />
-              <p className="text-xs text-white/30 mt-2">{VISUAL_TEMPLATES[visualStyle].description}</p>
+              <label className="text-xs uppercase tracking-widest text-white/40 mb-2 block">Image Style</label>
+              <div className="flex gap-2">
+                {IMAGE_STYLES.map((s) => (
+                  <button key={s.id} onClick={() => setImageStyle(s.id)} title={s.desc}
+                    className={`flex-1 px-3 py-2.5 rounded-lg text-sm font-semibold border transition-all ${imageStyle === s.id ? "bg-[#F5B301] text-[#1A1A2E] border-[#F5B301]" : "bg-white/5 text-white/60 border-white/10 hover:border-[#F5B301]/40"}`}>
+                    {s.icon} {s.label}
+                  </button>
+                ))}
+              </div>
+              <p className="text-xs text-white/30 mt-2">{IMAGE_STYLES.find((s) => s.id === imageStyle)?.desc}</p>
             </div>
 
-            {/* Output sizes */}
+            {/* Models to compare */}
             <div>
-              <label className="text-xs uppercase tracking-widest text-white/40 mb-2 block">
-                Output Sizes
-              </label>
+              <div className="flex items-center justify-between mb-2">
+                <label className="text-xs uppercase tracking-widest text-white/40">Compare Models</label>
+                <button onClick={() => setActiveTab("models")} className="text-xs text-white/30 hover:text-white/60">Manage</button>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {models.map((m) => (
+                  <button key={m} onClick={() => toggleActiveModel(m)}
+                    className={`px-2.5 py-1.5 rounded-lg text-xs font-mono border transition-all ${activeModels.includes(m) ? "bg-[#F5B301]/15 text-[#F5B301] border-[#F5B301]/50" : "bg-white/5 text-white/50 border-white/10 hover:border-white/30"}`}>
+                    {m}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Sizes */}
+            <div>
+              <label className="text-xs uppercase tracking-widest text-white/40 mb-2 block">Output Sizes</label>
               <div className="space-y-2">
                 {(Object.entries(SIZE_LABELS) as [PosterSize, string][]).map(([s, label]) => (
-                  <label
-                    key={s}
-                    className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
-                      sizes.includes(s)
-                        ? "border-[#F5B301]/40 bg-[#F5B301]/5"
-                        : "border-white/10 bg-white/5 hover:border-white/20"
-                    }`}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={sizes.includes(s)}
-                      onChange={() => toggleSize(s)}
-                      className="accent-[#F5B301]"
-                    />
+                  <label key={s} className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${sizes.includes(s) ? "border-[#F5B301]/40 bg-[#F5B301]/5" : "border-white/10 bg-white/5 hover:border-white/20"}`}>
+                    <input type="checkbox" checked={sizes.includes(s)} onChange={() => toggleSize(s)} className="accent-[#F5B301]" />
                     <span className="text-sm">{label}</span>
                   </label>
                 ))}
               </div>
             </div>
 
-            {/* Generate */}
-            <button
-              onClick={generate}
-              disabled={loading || imageLoading || !selectedScene}
-              className="w-full py-3.5 bg-[#F5B301] text-[#1A1A2E] font-bold text-base rounded-lg hover:bg-[#F5B301]/90 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
-            >
-              {loading ? "Building Brief…" : imageLoading ? "Generating Images…" : "Generate Creative"}
+            <button onClick={generate} disabled={loading}
+              className="w-full py-3.5 bg-[#F5B301] text-[#1A1A2E] font-bold text-base rounded-lg hover:bg-[#F5B301]/90 disabled:opacity-60 transition-colors">
+              {loading ? "Thinking…" : activeModels.length > 1 ? `Compare ${activeModels.length} Models` : "Generate Idea"}
             </button>
 
-            {error && (
-              <div className="p-4 bg-red-500/10 border border-red-500/30 rounded-lg text-sm text-red-400">
-                {error}
-              </div>
-            )}
+            {error && <div className="p-4 bg-red-500/10 border border-red-500/30 rounded-lg text-sm text-red-400">{error}</div>}
           </section>
 
-          {/* Right — preview */}
+          {/* Results — side by side per model */}
           <section>
-            {(loading || imageLoading) && (
+            {loading && (
               <div className="flex flex-col items-center justify-center h-80 gap-4">
                 <div className="w-12 h-12 border-4 border-[#F5B301] border-t-transparent rounded-full animate-spin" />
-                <p className="text-white/50 text-sm">
-                  {loading ? "Creative Director is thinking… (~10–15s)" : `Generating image${sizes.length > 1 ? "s" : ""}… (~30–60s)`}
-                </p>
+                <p className="text-white/50 text-sm">Creative Director is thinking…</p>
               </div>
             )}
 
-            {!loading && !imageLoading && posters.length === 0 && prompts.length === 0 && !error && (
+            {!loading && results.length === 0 && !error && (
               <div className="flex flex-col items-center justify-center h-80 gap-3 border border-dashed border-white/10 rounded-2xl">
                 <div className="text-4xl opacity-30">🖼</div>
-                <p className="text-white/30 text-sm">Your creative brief will appear here</p>
+                <p className="text-white/30 text-sm">Your creative ideas will appear here</p>
               </div>
             )}
 
-            {(lastBrief || prompts.length > 0 || posters.length > 0) && (
-              <div className="space-y-6">
-                {/* Creative Brief card */}
-                {lastBrief && (
-                  <div className="p-4 bg-white/3 border border-white/10 rounded-xl space-y-3">
-                    <p className="text-xs uppercase tracking-widest text-white/30">Creative Brief</p>
-                    <div className="grid grid-cols-2 gap-x-4 gap-y-3 text-xs">
-                      {[
-                        { label: "Goal", value: lastBrief.goal },
-                        { label: "Mood", value: lastBrief.mood },
-                        { label: "Scene", value: lastBrief.scene },
-                        { label: "Subject", value: lastBrief.subject },
-                        { label: "Lighting", value: lastBrief.lighting },
-                        { label: "Composition", value: lastBrief.composition },
-                        ...(lastBrief.cameraDirection ? [{ label: "Camera", value: lastBrief.cameraDirection }] : []),
-                        ...(lastBrief.typographySafeZone ? [{ label: "Type Safe Zone", value: lastBrief.typographySafeZone }] : []),
-                      ].map(({ label, value }) => (
-                        <div key={label} className="col-span-2 sm:col-span-1">
-                          <span className="text-white/30 font-semibold uppercase tracking-wide text-[10px]">{label}</span>
-                          <p className="text-white/60 mt-0.5 leading-snug">{value}</p>
-                        </div>
-                      ))}
+            {results.length > 0 && (
+              <div className={`grid gap-4 ${results.length > 1 ? "lg:grid-cols-2" : "grid-cols-1"}`}>
+                {results.map((r) => (
+                  <div key={r.model} className="bg-white/3 border border-white/10 rounded-xl overflow-hidden flex flex-col">
+                    <div className="px-4 py-2 border-b border-white/10 flex items-center justify-between">
+                      <span className="text-xs font-mono text-[#F5B301]">{r.model}</span>
+                      {r.error && <span className="text-[10px] text-red-400">fallback</span>}
                     </div>
-                    {lastBrief.emotions?.length > 0 && (
-                      <div>
-                        <span className="text-white/30 font-semibold uppercase tracking-wide text-[10px] block mb-1">Emotions</span>
-                        <div className="flex flex-wrap gap-1">
-                          {lastBrief.emotions.map((e) => (
-                            <span key={e} className="px-2 py-0.5 rounded-full bg-[#F5B301]/10 border border-[#F5B301]/20 text-[10px] text-[#F5B301]/70">
-                              {e}
-                            </span>
-                          ))}
+                    {r.brief && (
+                      <div className="p-4 space-y-2 text-xs">
+                        <div><span className="text-white/30 uppercase text-[10px]">Goal</span><p className="text-white/70 leading-snug">{r.brief.goal}</p></div>
+                        <div className="grid grid-cols-2 gap-2">
+                          <div><span className="text-white/30 uppercase text-[10px]">Mood</span><p className="text-white/60">{r.brief.mood}</p></div>
+                          <div><span className="text-white/30 uppercase text-[10px]">Subject</span><p className="text-white/60 leading-snug">{r.brief.subject}</p></div>
                         </div>
                       </div>
                     )}
-                    {lastBrief.businessRelevanceCues?.length > 0 && (
-                      <div>
-                        <span className="text-white/30 font-semibold uppercase tracking-wide text-[10px] block mb-1">Business Visual Cues</span>
-                        <div className="flex flex-wrap gap-1">
-                          {lastBrief.businessRelevanceCues.map((c) => (
-                            <span key={c} className="px-2 py-0.5 rounded-full bg-white/5 border border-white/10 text-[10px] text-white/40">
-                              {c}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                    {lastBrief.designIntent?.length > 0 && (
-                      <div>
-                        <span className="text-white/30 font-semibold uppercase tracking-wide text-[10px] block mb-1">Design Intent</span>
-                        <div className="flex flex-wrap gap-1">
-                          {lastBrief.designIntent.map((d) => (
-                            <span key={d} className="px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-[10px] text-emerald-400/70">
-                              {d}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                    {lastBrief.visualHierarchy?.length > 0 && (
-                      <div>
-                        <span className="text-white/30 font-semibold uppercase tracking-wide text-[10px] block mb-1">Visual Hierarchy</span>
-                        <ol className="space-y-0.5">
-                          {lastBrief.visualHierarchy.map((h, i) => (
-                            <li key={i} className="text-[10px] text-white/35">{h}</li>
-                          ))}
-                        </ol>
-                      </div>
-                    )}
-                    {lastBrief.visualKeywords?.length > 0 && (
-                      <div className="flex flex-wrap gap-1 pt-1">
-                        {lastBrief.visualKeywords.map((kw) => (
-                          <span key={kw} className="px-2 py-0.5 rounded-full bg-white/5 border border-white/10 text-[10px] text-white/50">
-                            {kw}
-                          </span>
-                        ))}
-                      </div>
-                    )}
+                    {/* Render buttons + images per size */}
+                    <div className="px-4 pb-4 space-y-3 mt-auto">
+                      {sizes.map((size) => {
+                        const key = `${r.model}|${size}`;
+                        const poster = images[key];
+                        const busy = rendering[key];
+                        return (
+                          <div key={size}>
+                            {poster ? (
+                              <div className="space-y-2">
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                <img src={poster.dataUrl} alt={poster.filename} className="rounded-lg w-full" />
+                                <button onClick={() => downloadPoster(poster)} className="w-full py-1.5 bg-[#F5B301] text-[#1A1A2E] text-xs font-bold rounded-lg">↓ Download {SIZE_LABELS[size]}</button>
+                              </div>
+                            ) : (
+                              <button onClick={() => r.brief && renderImage(r.model, r.brief, size)} disabled={busy}
+                                className="w-full py-2 border border-[#F5B301]/40 text-[#F5B301] text-xs font-semibold rounded-lg hover:bg-[#F5B301]/10 disabled:opacity-50">
+                                {busy ? `Generating ${size}… (~30–60s)` : `🖼 Render image · ${SIZE_LABELS[size]}`}
+                              </button>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
-                )}
-
-                {/* Per-size prompts */}
-                {prompts.length > 0 && (
-                  <div className="space-y-3">
-                    <h2 className="font-semibold text-white/70 text-sm uppercase tracking-wide">
-                      FAL Image Prompts
-                    </h2>
-                    {prompts.map(({ size, prompt }) => (
-                      <div key={size} className="bg-white/3 border border-white/10 rounded-xl overflow-hidden">
-                        <div className="px-4 py-2 border-b border-white/10 flex items-center justify-between">
-                          <span className="text-xs font-semibold text-[#F5B301]">{SIZE_LABELS[size]}</span>
-                          <button
-                            onClick={() => navigator.clipboard.writeText(prompt)}
-                            className="text-[10px] text-white/30 hover:text-white/60 transition-colors"
-                          >
-                            Copy
-                          </button>
-                        </div>
-                        <pre className="p-4 text-[11px] text-white/50 leading-relaxed whitespace-pre-wrap font-mono overflow-x-auto">
-                          {prompt}
-                        </pre>
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                {/* Poster previews (when image gen is re-enabled) */}
-                {posters.length > 0 && (
-                  <div className="space-y-4">
-                    <h2 className="font-semibold text-white/70 text-sm uppercase tracking-wide">
-                      Preview &amp; Download
-                    </h2>
-                    {posters.map((poster) => (
-                      <div key={poster.size} className="bg-white/5 border border-white/10 rounded-2xl overflow-hidden">
-                        <div className="px-4 py-3 flex items-center justify-between border-b border-white/10">
-                          <span className="text-sm font-medium text-white/70">{SIZE_LABELS[poster.size]}</span>
-                          <button
-                            onClick={() => downloadPoster(poster)}
-                            className="flex items-center gap-2 px-4 py-1.5 bg-[#F5B301] text-[#1A1A2E] text-xs font-bold rounded-lg hover:bg-[#F5B301]/90 transition-colors"
-                          >
-                            ↓ Download PNG
-                          </button>
-                        </div>
-                        <div className="p-4 flex justify-center">
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img
-                            src={poster.dataUrl}
-                            alt={poster.filename}
-                            className={`rounded-lg shadow-2xl max-w-full ${poster.size === "story" ? "max-h-[500px] w-auto" : "max-w-[400px]"}`}
-                          />
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
+                ))}
               </div>
             )}
           </section>
         </div>
       )}
 
-      {/* ── Brand Settings Tab ────────────────────────────────────────────────── */}
-      {activeTab === "brand" && (
-        <div className="max-w-2xl mx-auto px-4 py-8 space-y-8">
-          {brandLoading ? (
-            <div className="flex items-center justify-center h-40">
-              <div className="w-8 h-8 border-4 border-[#F5B301] border-t-transparent rounded-full animate-spin" />
+      {/* ── Branding ── */}
+      {activeTab === "brand" && brand && (
+        <div className="max-w-xl mx-auto px-4 py-8 space-y-6">
+          <h2 className="text-xs uppercase tracking-widest text-white/40 border-b border-white/10 pb-2">Your Branding (saved on this device)</h2>
+          <Field label="Business Name" value={brand.name} onChange={(v) => updateBrand({ name: v })} placeholder="Your business name" />
+          <Field label="Tagline" value={brand.tagline} onChange={(v) => updateBrand({ tagline: v })} placeholder="Your tagline" />
+          <Field label="Website" value={brand.website} onChange={(v) => updateBrand({ website: v })} placeholder="yoursite.com" />
+
+          <div>
+            <label className="text-xs text-white/40 block mb-1">Logo</label>
+            <div className="flex items-center gap-3">
+              {brand.logoPath ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={brand.logoPath} alt="logo" className="h-12 w-auto bg-white/10 rounded p-1" />
+              ) : <div className="h-12 w-12 rounded bg-white/5 flex items-center justify-center text-white/20 text-xs">none</div>}
+              <input type="file" accept="image/*" onChange={(e) => e.target.files?.[0] && onLogoFile(e.target.files[0])} className="text-xs text-white/60" />
             </div>
-          ) : brandForm ? (
-            <>
-              {/* Business Info */}
-              <section className="space-y-4">
-                <h2 className="text-xs uppercase tracking-widest text-white/40 border-b border-white/10 pb-2">
-                  Business Info
-                </h2>
-                <div className="grid gap-3">
-                  {[
-                    { field: "name" as const, label: "Business Name", placeholder: "SocietyBee" },
-                    { field: "industry" as const, label: "Industry", placeholder: "Software" },
-                    { field: "subCategory" as const, label: "What you actually sell", placeholder: "Billing software for housing societies" },
-                    { field: "tagline" as const, label: "Tagline", placeholder: "Let the Bee Manage, You Relax" },
-                    { field: "website" as const, label: "Website", placeholder: "societybee.in" },
-                  ].map(({ field, label, placeholder }) => (
-                    <div key={field}>
-                      <label className="text-xs text-white/40 block mb-1">{label}</label>
-                      <input
-                        type="text"
-                        value={(brandForm[field] as string) ?? ""}
-                        onChange={(e) => updateBrandField(field, e.target.value)}
-                        placeholder={placeholder}
-                        className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2.5 text-white text-sm placeholder:text-white/20 focus:outline-none focus:border-[#F5B301]/50"
-                      />
-                    </div>
-                  ))}
+          </div>
 
-                  <div>
-                    <label className="text-xs text-white/40 block mb-1">Business Description</label>
-                    <textarea
-                      value={brandForm.businessDescription ?? ""}
-                      onChange={(e) => updateBrandField("businessDescription", e.target.value)}
-                      rows={3}
-                      placeholder="What does your business do? Who does it serve?"
-                      className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2.5 text-white text-sm placeholder:text-white/20 focus:outline-none focus:border-[#F5B301]/50 resize-none"
-                    />
-                  </div>
+          <div className="space-y-3 pt-2">
+            <h3 className="text-xs uppercase tracking-widest text-white/40">Colours</h3>
+            <ColorField label="Primary (accents, CTA)" value={brand.colors.primary} onChange={(v) => updateColor("primary", v)} />
+            <ColorField label="Secondary (scrim)" value={brand.colors.secondary} onChange={(v) => updateColor("secondary", v)} />
+            <ColorField label="Accent (headline text)" value={brand.colors.accent} onChange={(v) => updateColor("accent", v)} />
+          </div>
 
-                  <div>
-                    <label className="text-xs text-white/40 block mb-1">Target Audience (comma-separated)</label>
-                    <input
-                      type="text"
-                      value={Array.isArray(brandForm.targetAudience) ? brandForm.targetAudience.join(", ") : brandForm.targetAudience ?? ""}
-                      onChange={(e) =>
-                        updateBrandField("targetAudience", e.target.value.split(",").map((s) => s.trim()).filter(Boolean))
-                      }
-                      placeholder="CAs, Treasurers, Society managers"
-                      className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2.5 text-white text-sm placeholder:text-white/20 focus:outline-none focus:border-[#F5B301]/50"
-                    />
-                  </div>
+          <div className="space-y-3 pt-2">
+            <h3 className="text-xs uppercase tracking-widest text-white/40">Contact (footer)</h3>
+            <Field label="Phone" value={brand.contact.phone} onChange={(v) => updateContact("phone", v)} placeholder="+91-00000-00000" />
+            <Field label="Website" value={brand.contact.website} onChange={(v) => updateContact("website", v)} placeholder="yoursite.com" />
+            <Field label="Social handle" value={brand.contact.handle} onChange={(v) => updateContact("handle", v)} placeholder="@yourhandle" />
+          </div>
+          <p className="text-xs text-white/30">Saved automatically in your browser. Nothing is uploaded.</p>
+        </div>
+      )}
+
+      {/* ── Models ── */}
+      {activeTab === "models" && (
+        <div className="max-w-xl mx-auto px-4 py-8 space-y-6">
+          <h2 className="text-xs uppercase tracking-widest text-white/40 border-b border-white/10 pb-2">LLM Models</h2>
+          <p className="text-xs text-white/50">Add any OpenRouter model id. Selected models run side-by-side when you generate, so you can compare their ideas. Stored on this device.</p>
+          <div className="flex gap-2">
+            <input value={newModel} onChange={(e) => setNewModel(e.target.value)} placeholder="e.g. anthropic/claude-haiku-4-5"
+              className="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-2.5 text-white text-sm font-mono placeholder:text-white/20 focus:outline-none focus:border-[#F5B301]/50" />
+            <button onClick={addModelHandler} className="px-4 py-2.5 bg-[#F5B301] text-[#1A1A2E] text-sm font-bold rounded-lg">Add</button>
+          </div>
+          <div className="space-y-2">
+            {models.map((m) => (
+              <div key={m} className="flex items-center justify-between p-3 rounded-lg border border-white/10 bg-white/5">
+                <div className="flex items-center gap-2">
+                  <input type="checkbox" checked={activeModels.includes(m)} onChange={() => toggleActiveModel(m)} className="accent-[#F5B301]" />
+                  <span className="text-sm font-mono text-white/70">{m}</span>
                 </div>
-              </section>
-
-              {/* Brand Personality */}
-              <section className="space-y-4">
-                <h2 className="text-xs uppercase tracking-widest text-white/40 border-b border-white/10 pb-2">
-                  Brand Personality
-                </h2>
-                <div className="grid gap-3">
-                  <div>
-                    <label className="text-xs text-white/40 block mb-2">Brand Style</label>
-                    <div className="flex flex-wrap gap-2">
-                      {(["Premium", "Corporate", "Modern", "Minimal", "Luxury", "Friendly", "Traditional", "Bold"] as const).map((s) => (
-                        <button
-                          key={s}
-                          onClick={() => updateBrandField("brandStyle", s)}
-                          className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all ${
-                            brandForm.brandStyle === s
-                              ? "bg-[#F5B301] text-[#1A1A2E] border-[#F5B301]"
-                              : "bg-white/5 text-white/60 border-white/10 hover:border-[#F5B301]/40"
-                          }`}
-                        >
-                          {s}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="text-xs text-white/40 block mb-2">Brand Voice</label>
-                    <div className="flex flex-wrap gap-2">
-                      {(["Professional", "Friendly", "Inspirational", "Luxury", "Youthful"] as const).map((v) => (
-                        <button
-                          key={v}
-                          onClick={() => updateBrandField("brandVoice", v)}
-                          className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all ${
-                            brandForm.brandVoice === v
-                              ? "bg-[#F5B301] text-[#1A1A2E] border-[#F5B301]"
-                              : "bg-white/5 text-white/60 border-white/10 hover:border-[#F5B301]/40"
-                          }`}
-                        >
-                          {v}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </section>
-
-              {/* Contact Details */}
-              <section className="space-y-4">
-                <h2 className="text-xs uppercase tracking-widest text-white/40 border-b border-white/10 pb-2">
-                  Contact Details
-                </h2>
-                <div className="grid gap-3">
-                  {[
-                    { field: "phone" as const, label: "Phone", placeholder: "+91-00000-00000" },
-                    { field: "email" as const, label: "Email", placeholder: "hello@yoursite.com" },
-                    { field: "website" as const, label: "Website", placeholder: "yoursite.com" },
-                    { field: "handle" as const, label: "Social Handle", placeholder: "@yourhandle" },
-                  ].map(({ field, label, placeholder }) => (
-                    <div key={field}>
-                      <label className="text-xs text-white/40 block mb-1">{label}</label>
-                      <input
-                        type="text"
-                        value={(brandForm.contact[field] as string) ?? ""}
-                        onChange={(e) => updateBrandContact(field, e.target.value)}
-                        placeholder={placeholder}
-                        className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2.5 text-white text-sm placeholder:text-white/20 focus:outline-none focus:border-[#F5B301]/50"
-                      />
-                    </div>
-                  ))}
-                </div>
-              </section>
-
-              {/* Brand Colors */}
-              <section className="space-y-4">
-                <h2 className="text-xs uppercase tracking-widest text-white/40 border-b border-white/10 pb-2">
-                  Brand Colors
-                </h2>
-                <div className="space-y-3">
-                  <ColorField label="Primary (accents, CTA buttons)" value={brandForm.colors.primary} onChange={(v) => updateBrandColor("primary", v)} />
-                  <ColorField label="Secondary (scrim, background)" value={brandForm.colors.secondary} onChange={(v) => updateBrandColor("secondary", v)} />
-                  <ColorField label="Accent (headline text)" value={brandForm.colors.accent} onChange={(v) => updateBrandColor("accent", v)} />
-                </div>
-                <div className="rounded-xl overflow-hidden border border-white/10" style={{ backgroundColor: brandForm.colors.secondary }}>
-                  <div className="px-5 py-4 flex items-center justify-between" style={{ borderBottom: `2px solid ${brandForm.colors.primary}20` }}>
-                    <span className="font-bold text-lg" style={{ color: brandForm.colors.accent }}>{brandForm.name}</span>
-                    <span className="text-xs font-bold px-3 py-1 rounded-lg" style={{ backgroundColor: brandForm.colors.primary, color: brandForm.colors.secondary }}>
-                      CTA Button
-                    </span>
-                  </div>
-                  <div className="px-5 py-3 flex items-center gap-4 flex-wrap">
-                    <span className="text-xs" style={{ color: brandForm.colors.accent + "99" }}>{brandForm.contact.phone}</span>
-                    <span style={{ color: brandForm.colors.primary }}>•</span>
-                    <span className="text-xs font-semibold" style={{ color: brandForm.colors.primary }}>{brandForm.contact.website}</span>
-                    <span style={{ color: brandForm.colors.primary }}>•</span>
-                    <span className="text-xs" style={{ color: brandForm.colors.accent + "99" }}>{brandForm.contact.handle}</span>
-                  </div>
-                </div>
-              </section>
-
-              {/* Default Visual Style */}
-              <section className="space-y-4">
-                <h2 className="text-xs uppercase tracking-widest text-white/40 border-b border-white/10 pb-2">
-                  Default Visual Style
-                </h2>
-                <StylePicker value={brandForm.visualStyle ?? "luxury-dark"} onChange={(s) => updateBrandField("visualStyle", s)} />
-              </section>
-
-              {/* Brand Assets */}
-              <section className="space-y-4">
-                <h2 className="text-xs uppercase tracking-widest text-white/40 border-b border-white/10 pb-2">
-                  Brand Assets
-                </h2>
-                <p className="text-xs text-white/40">
-                  Place images in <code className="font-mono bg-white/10 px-1 rounded">public/brand/</code> folder.
-                  Files with &quot;logo&quot; in the name are auto-detected as the logo.
-                </p>
-                {assets.length > 0 ? (
-                  <div className="grid grid-cols-3 gap-3">
-                    {assets.map((asset) => (
-                      <div key={asset.filename} className="space-y-1">
-                        <div className="rounded-xl overflow-hidden border border-white/10 bg-white/5 aspect-square flex items-center justify-center p-2">
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img
-                            src={asset.url}
-                            alt={asset.filename}
-                            className="max-w-full max-h-full object-contain"
-                          />
-                        </div>
-                        <p className="text-[10px] text-white/40 truncate text-center">{asset.filename}</p>
-                        {asset.isLogo && (
-                          <p className="text-[10px] text-[#F5B301] text-center font-semibold">Logo</p>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="p-6 border border-dashed border-white/10 rounded-xl text-center">
-                    <p className="text-white/30 text-sm">No images found in public/brand/</p>
-                    <p className="text-white/20 text-xs mt-1">Upload PNG/JPG files to that folder and redeploy</p>
-                  </div>
-                )}
-              </section>
-
-              {/* AI Enrichment */}
-              <section className="space-y-4">
-                <h2 className="text-xs uppercase tracking-widest text-white/40 border-b border-white/10 pb-2">
-                  AI Brand Enrichment
-                </h2>
-                <p className="text-xs text-white/40">
-                  Let AI analyse your business and generate visual keywords, brand summary and art direction — used automatically in every creative prompt.
-                </p>
-                {brandForm.industryVisualKeywords && brandForm.industryVisualKeywords.length > 0 && (
-                  <div className="flex flex-wrap gap-1.5">
-                    {brandForm.industryVisualKeywords.map((kw) => (
-                      <span key={kw} className="px-2.5 py-1 rounded-full bg-white/5 border border-white/10 text-xs text-white/60">
-                        {kw}
-                      </span>
-                    ))}
-                  </div>
-                )}
-                {brandForm.brandSummary && (
-                  <p className="text-xs text-white/50 italic">{brandForm.brandSummary}</p>
-                )}
-                <button
-                  onClick={enrichBrand}
-                  disabled={enriching}
-                  className="px-5 py-2.5 bg-white/5 border border-white/10 text-white/70 text-sm font-semibold rounded-lg hover:bg-white/10 disabled:opacity-50 transition-colors"
-                >
-                  {enriching ? "Enriching…" : "✦ Enrich with AI"}
-                </button>
-                {enrichResult && (
-                  <p className="text-xs text-[#F5B301]/80">{enrichResult}</p>
-                )}
-              </section>
-
-              {/* Save actions */}
-              <section className="space-y-3 pb-8">
-                <div className="flex gap-3">
-                  <button
-                    onClick={saveBrand}
-                    disabled={brandSaving}
-                    className="flex-1 py-3 bg-[#F5B301] text-[#1A1A2E] font-bold rounded-lg hover:bg-[#F5B301]/90 disabled:opacity-60 transition-colors"
-                  >
-                    {brandSaving ? "Saving…" : "Save Changes"}
-                  </button>
-                  <button
-                    onClick={downloadBrandJson}
-                    className="px-5 py-3 bg-white/5 border border-white/10 text-white/70 text-sm font-semibold rounded-lg hover:bg-white/10 transition-colors"
-                  >
-                    Download JSON
-                  </button>
-                </div>
-
-                {brandSaveResult?.persisted === true && (
-                  <p className="text-green-400 text-sm text-center">Saved successfully.</p>
-                )}
-                {brandSaveResult?.persisted === false && (
-                  <div className="p-4 bg-amber-500/10 border border-amber-500/30 rounded-xl text-sm text-amber-300 space-y-1">
-                    <p className="font-semibold">Changes active for this session only.</p>
-                    <p className="text-amber-300/70">
-                      Download the JSON above, replace{" "}
-                      <code className="font-mono bg-white/10 px-1 rounded">config/brand.json</code>{" "}
-                      in your repo, and redeploy to make changes permanent.
-                    </p>
-                  </div>
-                )}
-              </section>
-            </>
-          ) : (
-            <p className="text-white/40 text-sm text-center py-20">Failed to load brand settings.</p>
-          )}
+                <button onClick={() => deleteModelHandler(m)} className="text-xs text-red-400/70 hover:text-red-400">Delete</button>
+              </div>
+            ))}
+          </div>
         </div>
       )}
     </main>

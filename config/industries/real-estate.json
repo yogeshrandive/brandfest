@@ -1,0 +1,53 @@
+{
+  "id": "real-estate",
+  "name": "Real Estate & Property",
+  "icon": "🏠",
+  "description": "Property dealers, builders, interior and rental services",
+  "subcategories": [
+    {
+      "id": "residential-sales",
+      "name": "Residential Sales",
+      "description": "Apartment and home sales or brokerage",
+      "sceneEnvironments": [
+        "Modern residential building exterior at golden hour, clean architectural lines, premium landscaping",
+        "Bright contemporary living room with elegant furniture and large windows, warm inviting light",
+        "Aerial-style view of a premium housing community, lush greenery, blue sky"
+      ],
+      "props": ["modern house key", "miniature house model", "floor plan", "sold sign", "front door"],
+      "moods": ["aspirational", "premium", "trustworthy", "warm"],
+      "greetingExamples": ["Wishing you a home full of joy this festive season", "May this season bring you closer to your dream home"],
+      "offerExamples": ["Festive Booking Offer — special pricing", "Zero brokerage on new bookings this month"],
+      "vectorMotifs": ["house with key emblem", "rooftop line-art", "location pin badge", "building skyline icon"]
+    },
+    {
+      "id": "interior-design",
+      "name": "Interior Design",
+      "description": "Interior designers and home décor services",
+      "sceneEnvironments": [
+        "Beautifully designed interior space, curated furniture and décor, warm ambient lighting, magazine-quality",
+        "Close-up of material and fabric swatches with design tools on a clean table, soft daylight",
+        "Stylish room corner with statement lighting and décor, refined aesthetic, shallow focus"
+      ],
+      "props": ["fabric swatches", "design blueprint", "statement lamp", "décor cushions", "colour palette"],
+      "moods": ["elegant", "creative", "refined", "inviting"],
+      "greetingExamples": ["Design your celebrations beautifully this season", "Wishing your home warmth and style"],
+      "offerExamples": ["Festive Home Makeover — free consultation", "Special package on full-home interiors"],
+      "vectorMotifs": ["armchair emblem", "lamp line-art", "paint roller icon", "room frame badge"]
+    },
+    {
+      "id": "commercial-rentals",
+      "name": "Commercial & Rentals",
+      "description": "Office space, commercial property and rentals",
+      "sceneEnvironments": [
+        "Sleek modern office building facade, glass and steel, bright daylight, professional tone",
+        "Contemporary co-working interior with desks and natural light, clean organised space",
+        "Commercial property reception or lobby, polished surfaces, premium professional feel"
+      ],
+      "props": ["office building", "glass door", "reception desk", "keys", "city skyline"],
+      "moods": ["professional", "modern", "trustworthy", "clean"],
+      "greetingExamples": ["Wishing your business growth and prosperity this season", "Here's to new spaces and new beginnings"],
+      "offerExamples": ["Festive Lease Offer — first month free", "Premium office spaces at special rates"],
+      "vectorMotifs": ["office tower emblem", "handshake icon", "key line-art", "skyline badge"]
+    }
+  ]
+}

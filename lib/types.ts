@@ -35,6 +35,10 @@ export interface BrandConfig {
   logoPath: string;
   industry: string;
   subCategory: string;
+
+  // Selected taxonomy (drives the creative engine for this business)
+  industryId?: string;
+  subcategoryId?: string;
   tagline: string;
   website: string;
   colors: {
@@ -101,6 +105,13 @@ export interface ReservedArea {
   purpose: string;
 }
 
+// Where the logo should sit, and how big — planned by the LLM so the
+// background art reserves matching empty space. Consumed by the compositor.
+export interface LogoSpec {
+  position: "top-left" | "top-right" | "top-center" | "bottom-left" | "bottom-right";
+  widthPct: number; // logo width as a percentage of image width (e.g. 28)
+}
+
 export interface CreativeBrief {
   goal: string;
   mood: string;
@@ -121,7 +132,38 @@ export interface CreativeBrief {
   businessRelevanceCues: string[];
   designIntent: string[];
   visualHierarchy: string[];
+  logoSpec?: LogoSpec;
 }
+
+// ─── Industry taxonomy ──────────────────────────────────────────────────────
+// The business-agnostic replacement for SocietyBee-specific scenes. An industry
+// holds subcategories; each subcategory gives the LLM concrete scene material.
+
+export interface Subcategory {
+  id: string;
+  name: string;
+  description: string;
+  sceneEnvironments: string[]; // realistic settings for this business type
+  props: string[];             // business-relevant objects/details
+  moods: string[];
+  greetingExamples: string[];  // sample greeting messages
+  offerExamples: string[];     // sample offer headlines
+  vectorMotifs: string[];      // motif ideas for vector/illustration style
+}
+
+export interface Industry {
+  id: string;
+  name: string;
+  icon: string;
+  description: string;
+  subcategories: Subcategory[];
+}
+
+// The two reusable content moments (replace the 8 society scenes)
+export type ContentMoment = "greeting" | "offer";
+
+// User-facing image styles (exactly two to start)
+export type ImageStyle = "vector" | "real-human";
 
 export type CreativeStyle =
   | "realistic"
